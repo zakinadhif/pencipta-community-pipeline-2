@@ -143,8 +143,9 @@ def _(mo, test_output):
 @app.cell
 def _(mo, per_requester_tokens, per_run_tokens, store):
     mo.md("## Konsumsi token AI (dari DuckDB)")
+    _runs = [row for row in per_run_tokens(store) if row["total_tokens"] > 0]
     mo.hstack([
-        mo.ui.table(per_run_tokens(store), selection=None),
+        mo.ui.table(_runs, selection=None),
         mo.ui.table(per_requester_tokens(store), selection=None),
     ], justify="start")
     return
