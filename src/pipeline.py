@@ -219,6 +219,46 @@ def _compact(profile: dict[str, Any]) -> dict[str, Any]:
     return {key: profile.get(key, [] if key != "location" else None) for key in keys}
 
 
+def _estimated_usage(request: dict[str, Any], output_text: str) -> dict[str, int]:
+    """Approximate token usage for providers that return an empty usage object.
+    A rough heuristic: ~4 chars per token; marked as an estimate in tracing."""
+    import math
+
+    input_chars = len(request.get("instructions", "")) + len(str(request.get("input", "")))
+    input_tokens = max(1, math.ceil(input_chars / 4))
+    output_tokens = max(0, math.ceil(len(output_text or "") / 4))
+    return {
+        "input_tokens": input_tokens,
+        "cached_input_tokens": 0,
+        "output_tokens": output_tokens,
+        "reasoning_tokens": 0,
+        "total_tokens": input_tokens + output_tokens,
+    }
+
+
+def _with_estimated_usage(response: Any, request: dict[str, Any], output_text: str) -> Any:
+    """Return a response with usage populated even when the provider leaves it
+    empty, so tracing and cost accounting work. Always returns a dict so
+    usage_from_response can read it deterministically."""
+    if response is None:
+        return {"usage": _estimated_usage(request, output_text)}
+    usage = None
+    if isinstance(response, dict):
+        usage = response.get("usage")
+    elif hasattr(response, "usage"):
+        usage = response.usage
+    empty = False
+    if usage is None:
+        empty = True
+    elif isinstance(usage, dict):
+        empty = not usage.get("total_tokens")
+    elif hasattr(usage, "total_tokens"):
+        empty = not getattr(usage, "total_tokens", 0)
+    if empty:
+        return {"usage": _estimated_usage(request, output_text)}
+    return response
+
+
 class Pipeline:
     def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None, *, index: EmbeddingIndex | None = None, base_url: str | None = None) -> None:
         self.store, self.profiles = store, profiles
@@ -273,7 +313,9 @@ class Pipeline:
                         on_delta(delta)
                 if getattr(event, "type", "") == "response.completed":
                     final_response = getattr(event, "response", None)
-            parsed = _parse_json_tolerant("".join(output) or getattr(final_response, "output_text", ""))
+            output_text = "".join(output) or getattr(final_response, "output_text", "")
+            parsed = _parse_json_tolerant(output_text)
+            final_response = _with_estimated_usage(final_response, request, output_text)
         except Exception as exc:
             if _retryable_stream_error(exc):
                 # Fallback for providers that reject the SDK's streaming request
@@ -289,6 +331,7 @@ class Pipeline:
                     if on_delta:
                         on_delta(stream_text)
                     parsed = _parse_json_tolerant(stream_text)
+                    final_response = _with_estimated_usage(final_response, request, stream_text)
                 except Exception as fallback_exc:
                     trace = make_trace(stage=stage, model=model, reasoning_effort=reasoning_effort, prompt_version=prompt_version, request=request, response=final_response, stream_events=events, ttft_ms=first_delta, latency_ms=round((time.perf_counter() - started) * 1000, 2), error=f"{type(fallback_exc).__name__}: {fallback_exc}")
                     self.store.add_call(run_id, trace)
