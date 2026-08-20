@@ -9,13 +9,14 @@ app = marimo.App(width="full", app_title="Profile Compiler Laboratory")
 def _():
     import json
     import os
+    from pathlib import Path
 
     import marimo as mo
     from dotenv import load_dotenv
 
-    from src.harness.profile_compiler import ProfileCompiler
+    from src.agents.profile_compiler import ProfileCompiler
 
-    load_dotenv()
+    load_dotenv(Path(__file__).parent / ".env")
     return ProfileCompiler, json, mo, os
 
 

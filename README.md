@@ -10,7 +10,7 @@ cost-accounting code lives in `src/harness/`.
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 # Then replace the placeholder in .env with your key.
-marimo edit experimental_harness.py
+marimo edit 05_end_to_end.py
 ```
 
 The work follows the handoffs in `plans/` in order. Begin with the profile
@@ -19,7 +19,7 @@ vertical slice, then move into matching:
 ```powershell
 marimo edit 01_onboarding.py
 marimo edit 02_profile_compiler.py
-marimo edit experimental_harness.py  # current end-to-end matching laboratory
+marimo edit 05_end_to_end.py  # current end-to-end matching laboratory
 ```
 
 `01_onboarding.py` and `02_profile_compiler.py` produce inspectable,
@@ -45,8 +45,8 @@ separately because it is aggregate rather than attributable to one request.
 ## Useful commands
 
 ```powershell
-marimo check experimental_harness.py
-marimo run experimental_harness.py
+marimo check 05_end_to_end.py
+marimo run 05_end_to_end.py
 ```
 
 No API key is written to DuckDB or source control.

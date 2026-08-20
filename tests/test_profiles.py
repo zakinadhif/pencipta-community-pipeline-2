@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from src.harness.profiles import ProfileDraft, ProfileValidationError
+from src.schemas.profile import ProfileDraft, ProfileValidationError
 
 
 def test_synthetic_profiles_conform_to_profile_ontology():

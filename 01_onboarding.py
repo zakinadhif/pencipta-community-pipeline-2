@@ -13,10 +13,10 @@ def _():
     import marimo as mo
     from dotenv import load_dotenv
 
-    from src.harness.onboarding import ONBOARDING_PROMPT
+    from src.agents.onboarding import ONBOARDING_CHAT_PROMPT
 
     load_dotenv(Path(__file__).parent / ".env")
-    return ONBOARDING_PROMPT, mo, os
+    return ONBOARDING_CHAT_PROMPT, mo, os
 
 
 @app.cell
@@ -32,14 +32,14 @@ def _(mo):
 
 
 @app.cell
-def _(ONBOARDING_PROMPT, mo, os):
+def _(ONBOARDING_CHAT_PROMPT, mo, os):
     api_key = os.getenv("OPENAI_API_KEY")
     mo.stop(not api_key, mo.callout("`OPENAI_API_KEY` is missing. Add it to the repository `.env`, then restart this notebook.", kind="warn"))
     chat = mo.ui.chat(
         mo.ai.llm.openai(
             "gpt-5.6-terra",
             api_key=api_key,
-            system_message=ONBOARDING_PROMPT,
+            system_message=ONBOARDING_CHAT_PROMPT,
         ),
         prompts=["Start my onboarding"],
         # This model accepts only its default temperature (1); Marimo's chat

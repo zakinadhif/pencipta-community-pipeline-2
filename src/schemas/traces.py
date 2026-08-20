@@ -1,0 +1,1 @@
+"""Persistent trace-record contracts."""

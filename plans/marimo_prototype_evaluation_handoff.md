@@ -90,8 +90,7 @@ The notebook should make it easy to answer questions such as:
 Recommended structure:
 
 ```text
-prototype/
-
+/ (workspace root)
   01_onboarding.py
   02_profile_compiler.py
   03_retrieval.py

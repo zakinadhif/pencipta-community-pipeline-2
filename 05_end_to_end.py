@@ -14,8 +14,8 @@ def _():
     import marimo as mo
     from dotenv import load_dotenv
 
-    from src.harness.pipeline import Pipeline, PipelineConfig, sync_authoritative_costs
-    from src.harness.storage import ExperimentStore
+    from src.pipeline import Pipeline, PipelineConfig, sync_authoritative_costs
+    from src.tracing.storage import ExperimentStore
 
     return ExperimentStore, Path, Pipeline, PipelineConfig, json, load_dotenv, mo, os, sync_authoritative_costs
 
@@ -63,12 +63,12 @@ def _(mo, profiles):
 
 @app.cell
 def _(mo):
-    need_model = mo.ui.text(label="Need model", value="gpt-4.1-mini")
-    judge_model = mo.ui.text(label="Judge model", value="gpt-4.1-mini")
-    intro_model = mo.ui.text(label="Introduction model", value="gpt-4.1-mini")
-    reasoning = mo.ui.dropdown(label="Judge reasoning", options=["none", "low", "medium", "high"], value="none")
-    retrieval_count = mo.ui.number(label="Initial retrieval count", start=1, stop=50, value=15)
-    shortlist = mo.ui.number(label="Judge shortlist", start=1, stop=25, value=8)
+    need_model = mo.ui.text(label="Need model", value="gpt-5.6-luna")
+    judge_model = mo.ui.text(label="Judge model", value="gpt-5.6-terra")
+    intro_model = mo.ui.text(label="Introduction model", value="gpt-5.6-luna")
+    reasoning = mo.ui.dropdown(label="Judge reasoning", options=["none", "low", "medium", "high"], value="medium")
+    retrieval_count = mo.ui.number(label="Initial retrieval count", start=1, stop=50, value=30)
+    shortlist = mo.ui.number(label="Judge shortlist", start=1, stop=25, value=12)
     offers_weight = mo.ui.number(label="Offers weight", start=0, stop=1, step=0.05, value=0.45)
     interests_weight = mo.ui.number(label="Interests weight", start=0, stop=1, step=0.05, value=0.20)
     reciprocity_weight = mo.ui.number(label="Reciprocity weight", start=0, stop=1, step=0.05, value=0.20)
@@ -127,7 +127,9 @@ def _(api_key, cached_rate, input_rate, interaction_weight, interests_weight, in
     mo.stop(not project_secret, mo.callout("Live mode requires OPENAI_API_KEY. The synthetic dataset remains available for inspection without it.", kind="warn"))
     config = PipelineConfig(
         need_model=need_model.value.strip(), judge_model=judge_model.value.strip(),
-        introduction_model=intro_model.value.strip(), reasoning_effort=reasoning.value,
+        introduction_model=intro_model.value.strip(),
+        need_reasoning_effort="low", judge_reasoning_effort=reasoning.value,
+        introduction_reasoning_effort="low",
         retrieval_count=int(retrieval_count.value), judge_shortlist=int(shortlist.value),
         offers_weight=float(offers_weight.value), interests_weight=float(interests_weight.value),
         reciprocity_weight=float(reciprocity_weight.value), interaction_weight=float(interaction_weight.value),
