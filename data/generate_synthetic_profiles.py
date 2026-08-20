@@ -1,4 +1,4 @@
-"""Deterministically expand the eight canonical profiles to 100 inspectable fixtures."""
+"""Deterministically expand the canonical profiles to 2,000 inspectable fixtures."""
 from __future__ import annotations
 
 import json
@@ -22,15 +22,15 @@ ARCHETYPES = [
 LOCATIONS = ["Bandung", "Jakarta", "Yogyakarta", "Surabaya", "Malang", "Denpasar"]
 
 
-def expanded_profiles(anchors: list[dict]) -> list[dict]:
+def expanded_profiles(anchors: list[dict], *, count: int = 2000) -> list[dict]:
     profiles = [profile for profile in anchors if not profile["id"].startswith("synthetic-")]
-    for index in range(1, 101 - len(profiles)):
+    for index in range(1, count + 1 - len(profiles)):
         key, headline, knowledge, experience, interests, offers, needs, open_to = ARCHETYPES[(index - 1) % len(ARCHETYPES)]
         cohort = (index - 1) // len(ARCHETYPES) + 1
         profiles.append({
-            "id": f"synthetic-{index:03d}", "name": f"Synthetic {key.title()} {cohort}",
+            "id": f"synthetic-{index:04d}", "name": f"Synthetic {key.title()} {cohort}",
             "headline": headline,
-            "summary": f"Synthetic fixture {index:03d}: {headline.lower()} open to focused knowledge exchange.",
+            "summary": f"Synthetic fixture {index:04d}: {headline.lower()} open to focused knowledge exchange.",
             "knowledge": knowledge, "experience": experience, "interests": interests,
             "canHelpWith": offers, "lookingFor": needs, "openTo": open_to,
             "location": LOCATIONS[(index - 1) % len(LOCATIONS)],
