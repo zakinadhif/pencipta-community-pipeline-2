@@ -2,5 +2,8 @@
   {"requester_id":"adi","query":"I want someone who has deployed an AT Protocol PDS themselves and can help me understand the setup.","known_good_candidate_ids":["niko"]},
   {"requester_id":"adi","query":"I need a senior developer who genuinely enjoys teaching beginners.","known_good_candidate_ids":["raka"]},
   {"requester_id":"adi","query":"I started a student organization and need help keeping volunteers motivated.","known_good_candidate_ids":["sarah"]},
-  {"requester_id":"adi","query":"I need practical advice getting first users for a campus product.","known_good_candidate_ids":["maya"]}
+  {"requester_id":"adi","query":"I need practical advice getting first users for a campus product.","known_good_candidate_ids":["maya"]},
+  {"requester_id":"adi","query":"I want a designer who likes brutalist interfaces and wants side projects.","known_good_candidate_ids":["dimas"]},
+  {"requester_id":"adi","query":"I want someone who's travelled to Japan as a Muslim and can help me plan.","known_good_candidate_ids":["hana"]},
+  {"requester_id":"adi","query":"I want someone who understands accounting but wants help learning programming.","known_good_candidate_ids":["lina"]}
 ]

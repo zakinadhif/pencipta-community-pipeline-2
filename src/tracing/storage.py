@@ -76,7 +76,11 @@ class ExperimentStore:
         )
 
     def add_call(self, run_id: str, trace: dict[str, Any]) -> None:
+        if hasattr(trace, "to_dict"):
+            trace = trace.to_dict()
         usage = trace.get("usage", {})
+        if not usage:
+            usage = {key: trace.get(key, 0) for key in ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")}
         self.con.execute("insert into llm_calls values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
             str(uuid.uuid4()), run_id, trace["stage"], trace.get("call_type", "response"),
             trace.get("model"), trace.get("reasoning_effort"), trace.get("prompt_version"),

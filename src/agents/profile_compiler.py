@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 from openai import OpenAI
 
 from ..schemas.profile import ProfileDraft, ProfileValidationError
+from ..tracing.trace import make_trace
 
 
 PROFILE_COMPILER_VERSION = "profile_compiler_v1"
@@ -72,7 +74,7 @@ Good:
 Generate a short human-readable profile and structured fields.
 """
 
-PROFILE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo", "projects", "location"], "properties": {"headline": {"type": "string"}, "summary": {"type": "string"}, "knowledge": {"type": "array", "items": {"type": "string"}}, "experience": {"type": "array", "items": {"type": "string"}}, "interests": {"type": "array", "items": {"type": "string"}}, "canHelpWith": {"type": "array", "items": {"type": "string"}}, "lookingFor": {"type": "array", "items": {"type": "string"}}, "openTo": {"type": "array", "items": {"type": "string"}}, "projects": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["description"], "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "status": {"type": "string"}}}}, "location": {"type": ["string", "null"]}}}
+PROFILE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo", "projects", "location"], "properties": {"headline": {"type": "string"}, "summary": {"type": "string"}, "knowledge": {"type": "array", "items": {"type": "string"}}, "experience": {"type": "array", "items": {"type": "string"}}, "interests": {"type": "array", "items": {"type": "string"}}, "canHelpWith": {"type": "array", "items": {"type": "string"}}, "lookingFor": {"type": "array", "items": {"type": "string"}}, "openTo": {"type": "array", "items": {"type": "string"}}, "projects": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["name", "description", "status"], "properties": {"name": {"type": ["string", "null"]}, "description": {"type": "string"}, "status": {"type": ["string", "null"]}}}}, "location": {"type": ["string", "null"]}}}
 
 
 class ProfileCompiler:
@@ -80,14 +82,28 @@ class ProfileCompiler:
         self.client = OpenAI(api_key=api_key)
 
     def compile(self, transcript: list[dict[str, str]], *, model: str = "gpt-5.6-luna", reasoning_effort: str = "low") -> tuple[ProfileDraft, dict[str, Any]]:
+        draft, raw_response, _ = self.compile_with_trace(
+            transcript, model=model, reasoning_effort=reasoning_effort
+        )
+        return draft, raw_response
+
+    def compile_with_trace(self, transcript: list[dict[str, str]], *, model: str = "gpt-5.6-luna", reasoning_effort: str = "low", max_output_tokens: int = 1200):
         if not transcript:
             raise ValueError("A transcript is required before compiling a profile.")
-        request: dict[str, Any] = {"model": model, "instructions": PROFILE_COMPILER_PROMPT, "input": json.dumps({"transcript": transcript}), "text": {"format": {"type": "json_schema", "name": "profile_draft", "schema": PROFILE_SCHEMA, "strict": True}}}
+        request: dict[str, Any] = {"model": model, "instructions": PROFILE_COMPILER_PROMPT, "input": json.dumps({"transcript": transcript}), "max_output_tokens": max_output_tokens, "text": {"format": {"type": "json_schema", "name": "profile_draft", "schema": PROFILE_SCHEMA, "strict": True}}}
         if reasoning_effort != "none":
             request["reasoning"] = {"effort": reasoning_effort}
-        response = self.client.responses.create(**request)
+        started = time.perf_counter()
+        response = None
+        try:
+            response = self.client.responses.create(**request)
+        except Exception as exc:
+            trace = make_trace(stage="profile_compiler", model=model, reasoning_effort=reasoning_effort, prompt_version=PROFILE_COMPILER_VERSION, request=request, response=response, latency_ms=(time.perf_counter() - started) * 1000, error=f"{type(exc).__name__}: {exc}")
+            setattr(exc, "llm_trace", trace)
+            raise
         try:
             draft = ProfileDraft.from_dict(json.loads(response.output_text))
         except (json.JSONDecodeError, ProfileValidationError) as exc:
             raise RuntimeError(f"Profile compiler returned an invalid draft: {exc}") from exc
-        return draft, response.model_dump()
+        trace = make_trace(stage="profile_compiler", model=model, reasoning_effort=reasoning_effort, prompt_version=PROFILE_COMPILER_VERSION, request=request, response=response, latency_ms=(time.perf_counter() - started) * 1000)
+        return draft, response.model_dump(), trace

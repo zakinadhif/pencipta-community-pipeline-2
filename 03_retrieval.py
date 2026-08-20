@@ -8,12 +8,25 @@ app = marimo.App(width="full", app_title="Retrieval Laboratory")
 @app.cell
 def _():
     import json
+    import os
     from pathlib import Path
+    from types import SimpleNamespace
 
     import marimo as mo
+    from dotenv import load_dotenv
+    from openai import OpenAI
 
-    profiles = json.loads((Path(__file__).parent / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
-    return mo, profiles
+    from src.pipeline import PipelineConfig
+    from src.retrieval.embeddings import OpenAIEmbedder
+    from src.retrieval.prescore import weighted_prescore
+    from src.retrieval.search import search_people
+    from src.tracing.storage import ExperimentStore
+
+    workspace = Path(__file__).parent
+    load_dotenv(workspace / ".env")
+    profiles = json.loads((workspace / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
+    store = ExperimentStore(workspace / "data" / "runs.duckdb")
+    return OpenAI, OpenAIEmbedder, PipelineConfig, json, mo, os, profiles, search_people, store, weighted_prescore
 
 
 @app.cell
@@ -22,9 +35,65 @@ def _(mo, profiles):
     # 03 — Retrieval
 
     Inspect candidate pools, directional similarity, and deterministic prescores here.
-    Embedding generation is the next implementation milestone; the current lexical baseline lives in `src/retrieval/`.
+    Run directional retrieval independently from the judge. Leave the API key empty for the lexical baseline, or use the configured key for `text-embedding-3-large`.
     """)
-    mo.ui.table(profiles, selection=None)
+    return
+
+
+@app.cell
+def _(json, mo, profiles):
+    options = {f"{profile['name']} — {profile['headline']}": profile["id"] for profile in profiles}
+    requester = mo.ui.dropdown(label="Requester", options=options, value=next(iter(options.values())))
+    query = mo.ui.text_area(label="Original query", value="I need a senior developer who enjoys teaching beginners.", full_width=True)
+    need_json = mo.ui.text_area(label="Need Interpreter output", rows=14, full_width=True, value=json.dumps({"goal": "learn software development from an experienced mentor", "interactionType": ["being_mentored"], "target": {"knowledge": ["software development"], "experience": ["senior developer"], "interests": ["teaching beginners"]}, "hardFilters": {"location": None, "interactionTypes": []}, "softPreferences": [], "retrievalQueries": {"offers": "senior software developer who teaches beginners", "interests": "software education and mentoring beginners", "needs": "beginner offering enthusiasm and consistent practice"}, "avoidMatchingOn": ["other beginners seeking mentors"]}, indent=2))
+    api_key = mo.ui.text(label="OpenAI API key (optional; otherwise lexical)", kind="password", full_width=True)
+    count = mo.ui.number(label="Candidate count", start=1, stop=100, value=30)
+    offers = mo.ui.number(label="Offers weight", start=0, stop=1, step=0.05, value=0.45)
+    interests = mo.ui.number(label="Interests weight", start=0, stop=1, step=0.05, value=0.20)
+    reciprocity = mo.ui.number(label="Reciprocity weight", start=0, stop=1, step=0.05, value=0.20)
+    interaction = mo.ui.number(label="Interaction weight", start=0, stop=1, step=0.05, value=0.15)
+    run = mo.ui.run_button(label="Run retrieval", kind="success")
+    mo.vstack([requester, query, need_json, api_key, mo.hstack([count, offers, interests, reciprocity, interaction]), run])
+    return api_key, count, interaction, interests, need_json, offers, query, reciprocity, requester, run
+
+
+@app.cell
+def _(OpenAI, OpenAIEmbedder, PipelineConfig, api_key, count, interaction, interests, json, mo, need_json, offers, os, profiles, query, reciprocity, requester, run, search_people, store, weighted_prescore):
+    mo.stop(not run.value)
+    need = json.loads(need_json.value)
+    requester_profile = next(profile for profile in profiles if profile["id"] == requester.value)
+    secret = api_key.value.strip() or os.getenv("OPENAI_API_KEY")
+    embedder = OpenAIEmbedder(OpenAI(api_key=secret)) if secret else None
+    config = PipelineConfig(retrieval_count=int(count.value), offers_weight=float(offers.value), interests_weight=float(interests.value), reciprocity_weight=float(reciprocity.value), interaction_weight=float(interaction.value))
+    rows = search_people(profiles=profiles, requester=requester_profile, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(profiles), embedder=embedder)
+    for row in rows:
+        row["interaction_score"] = float(bool(set(need["interactionType"]) & set(row["candidate"].get("openTo", []))))
+        row["prescore"] = weighted_prescore(row["offers_similarity"], row["interests_similarity"], row["reciprocal_similarity"], row["interaction_score"], config)
+    rows.sort(key=lambda row: row["prescore"], reverse=True)
+    rows = rows[:int(count.value)]
+    for rank, row in enumerate(rows, 1):
+        row["rank"] = rank
+    run_id = store.new_run(requester_profile, query.value, {"experiment": "retrieval", "weights": {"offers": offers.value, "interests": interests.value, "reciprocity": reciprocity.value, "interaction": interaction.value}, "count": count.value})
+    if embedder and embedder.last_trace:
+        store.add_call(run_id, embedder.last_trace)
+    store.add_retrieval(run_id, rows)
+    cost = embedder.last_trace.estimated_cost_usd if embedder and embedder.last_trace else 0.0
+    latency = embedder.last_trace.latency_ms if embedder and embedder.last_trace else 0.0
+    store.finish_run(run_id, need=need, status="completed", error=None, latency_ms=latency, estimated_cost=cost)
+    retrieval_result = {"run_id": run_id, "need": need, "rows": rows, "embedding_trace": embedder.last_trace.to_dict() if embedder and embedder.last_trace else None}
+    return (retrieval_result,)
+
+
+@app.cell
+def _(mo, retrieval_result):
+    selected_need = retrieval_result["need"]
+    mo.vstack([
+        mo.md("## Interpreted need and directional queries"),
+        mo.json_output(selected_need),
+        mo.ui.table([{"rank": row["rank"], "person": row["candidate"]["name"], "offers": round(row["offers_similarity"], 3), "interests": round(row["interests_similarity"], 3), "reciprocal": round(row["reciprocal_similarity"], 3), "interaction": row["interaction_score"], "prescore": round(row["prescore"], 3)} for row in retrieval_result["rows"]], selection=None),
+        mo.accordion({f"#{row['rank']} {row['candidate']['name']}": mo.json_output({key: row["candidate"].get(key) for key in ("headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo")}) for row in retrieval_result["rows"]}),
+        mo.accordion({"Embedding trace": mo.json_output(retrieval_result["embedding_trace"] or {"mode": "lexical baseline"})}),
+    ])
     return
 
 

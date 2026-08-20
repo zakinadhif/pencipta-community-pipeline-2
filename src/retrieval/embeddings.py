@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import Any, Protocol
+
+from ..tracing.trace import make_trace
 
 
 EMBEDDING_MODEL = "text-embedding-3-large"
@@ -37,9 +40,13 @@ class Embedder(Protocol):
 class OpenAIEmbedder:
     def __init__(self, client: Any, model: str = EMBEDDING_MODEL) -> None:
         self.client, self.model = client, model
+        self.last_trace = None
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        response = self.client.embeddings.create(model=self.model, input=texts)
+        request = {"model": self.model, "input": texts}
+        started = time.perf_counter()
+        response = self.client.embeddings.create(**request)
+        self.last_trace = make_trace(stage="embeddings", model=self.model, reasoning_effort=None, prompt_version="profile_vectors_v1", request=request, response=response, latency_ms=(time.perf_counter() - started) * 1000, call_type="embedding")
         return [item.embedding for item in response.data]
 
 

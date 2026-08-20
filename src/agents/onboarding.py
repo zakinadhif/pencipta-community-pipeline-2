@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from openai import OpenAI
+
+from ..tracing.trace import make_trace
 
 
 ONBOARDING_VERSION = "onboarding_v1"
@@ -159,14 +162,14 @@ class OnboardingSession:
         }
 
     @classmethod
-    def from_messages(cls, messages: list[Any]) -> OnboardingSession:
+    def from_messages(cls, messages: list[Any], *, finished: bool = False) -> OnboardingSession:
         turns: list[Turn] = []
         for message in messages:
             role = getattr(message, "role", None)
             content = getattr(message, "content", None)
             if role in {"user", "assistant"} and isinstance(content, str):
                 turns.append(Turn(role, content))
-        return cls(turns=turns)
+        return cls(turns=turns, finished=finished)
 
 
 class OnboardingInterviewer:
@@ -197,7 +200,10 @@ class OnboardingInterviewer:
             request["reasoning"] = {"effort": reasoning_effort}
 
         tool_events: list[dict[str, Any]] = []
+        traces = []
+        started = time.perf_counter()
         response = self.client.responses.create(**request)
+        traces.append(make_trace(stage="onboarding", model=model, reasoning_effort=reasoning_effort, prompt_version=ONBOARDING_VERSION, request=request, response=response, latency_ms=(time.perf_counter() - started) * 1000))
         for _ in range(8):
             tool_calls = [item for item in response.output if item.type == "function_call"]
             if not tool_calls:
@@ -225,7 +231,9 @@ class OnboardingInterviewer:
                 )
 
             follow_up = {**request, "input": input_items, "tool_choice": "auto"}
+            started = time.perf_counter()
             response = self.client.responses.create(**follow_up)
+            traces.append(make_trace(stage="onboarding", model=model, reasoning_effort=reasoning_effort, prompt_version=ONBOARDING_VERSION, request=follow_up, response=response, latency_ms=(time.perf_counter() - started) * 1000))
         else:
             raise RuntimeError("Onboarding interviewer exceeded the tool-call limit.")
 
@@ -237,6 +245,7 @@ class OnboardingInterviewer:
             "message": message,
             "finished": session.finished,
             "tool_events": tool_events,
+            "traces": traces,
             "response": response.model_dump(),
         }
 

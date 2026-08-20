@@ -70,3 +70,9 @@ def test_finish_tool_marks_session_complete():
         "getOnboardingState",
         "finishOnboarding",
     ]
+
+
+def test_message_reconstruction_preserves_explicit_completion_state():
+    messages = [SimpleNamespace(role="user", content="I build data systems.")]
+    session = OnboardingSession.from_messages(messages, finished=True)
+    assert session.finished is True

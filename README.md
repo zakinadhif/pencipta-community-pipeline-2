@@ -1,8 +1,8 @@
 # Matching-pipeline experiment harness
 
 This repository is a Marimo laboratory for an AI-assisted people-matching
-pipeline. The notebook is a driver; reusable pipeline, storage, prompting, and
-cost-accounting code lives in `src/harness/`.
+pipeline. The notebooks are experiment drivers; reusable pipeline, storage,
+prompting, evaluation, and cost-accounting code lives in `src/`.
 
 ## Start
 
@@ -19,11 +19,16 @@ vertical slice, then move into matching:
 ```powershell
 marimo edit 01_onboarding.py
 marimo edit 02_profile_compiler.py
-marimo edit 05_end_to_end.py  # current end-to-end matching laboratory
+marimo edit 03_retrieval.py
+marimo edit 04_matching.py
+marimo edit 05_end_to_end.py
+marimo edit 06_evals.py
 ```
 
-`01_onboarding.py` and `02_profile_compiler.py` produce inspectable,
-user-editable records and drafts only. They never commit a profile or generate
+The six root notebooks cover onboarding, editable profile compilation,
+directional retrieval, isolated judging, the complete pipeline, and persisted
+evaluation comparisons respectively. The first two produce inspectable,
+user-editable records and drafts only; they never commit a profile or generate
 embeddings automatically.
 
 Live runs persist every intermediate result in `data/runs.duckdb`. The bundled
@@ -38,14 +43,15 @@ executing the model stages requires one.
 - optional organization Costs API buckets (requires `OPENAI_ADMIN_KEY`)
 
 Per-call token counts come from the final API usage object. Per-call dollar
-values are clearly marked **estimates** based on rates entered in the notebook;
+values are clearly marked **estimates** based on centralized rates in
+`src/costs/pricing.py`;
 the organization Costs API is the financial source of truth and is stored
 separately because it is aggregate rather than attributable to one request.
 
 ## Useful commands
 
 ```powershell
-marimo check 05_end_to_end.py
+marimo check 01_onboarding.py 02_profile_compiler.py 03_retrieval.py 04_matching.py 05_end_to_end.py 06_evals.py
 marimo run 05_end_to_end.py
 ```
 

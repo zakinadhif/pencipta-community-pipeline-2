@@ -10,7 +10,7 @@ def _matches_hard_filters(candidate: dict[str, Any], filters: dict[str, Any], in
     location = filters.get("location")
     if location and candidate.get("location", "").casefold() != str(location).casefold():
         return False
-    required = filters.get("interactionTypes", interaction_types)
+    required = filters.get("interactionTypes") or interaction_types
     return not required or bool(set(required) & set(candidate.get("openTo", [])))
 
 
@@ -21,7 +21,8 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
     if embedder:
         # Reciprocity is directional: what the requester can offer is compared
         # against what a candidate is looking for.
-        query_texts = [queries.get("offers", ""), queries.get("interests", ""), requester_vectors.offers]
+        reciprocal_query_text = queries.get("needs", "").strip() or requester_vectors.offers
+        query_texts = [queries.get("offers", ""), queries.get("interests", ""), reciprocal_query_text]
         candidate_docs = [profile_vectors(profile) for profile in candidates]
         vectors = embedder.embed(query_texts + [doc for triple in candidate_docs for doc in (triple.offers, triple.interests, triple.needs)])
         offer_query, interest_query, reciprocal_query = vectors[:3]

@@ -31,3 +31,53 @@ def test_retrieval_excludes_requester_and_applies_hard_location_filter():
     assert results
     assert all(row["candidate"]["id"] != "adi" for row in results)
     assert all(row["candidate"]["location"] == "Bandung" for row in results)
+
+
+def test_interpreted_interaction_types_apply_when_hard_filter_list_is_empty():
+    requester = {
+        "id": "requester", "knowledge": [], "experience": [], "interests": [],
+        "canHelpWith": ["Python"], "lookingFor": ["mentoring"], "openTo": [], "projects": [],
+    }
+    incompatible = {
+        "id": "incompatible", "knowledge": [], "experience": [], "interests": [],
+        "canHelpWith": ["mentoring"], "lookingFor": [], "openTo": [], "projects": [],
+    }
+    compatible = {
+        **incompatible, "id": "compatible", "openTo": ["mentoring"],
+    }
+    rows = search_people(
+        profiles=[requester, incompatible, compatible], requester=requester,
+        queries={"offers": "mentoring", "interests": "", "needs": "Python help"},
+        filters={"location": None, "interactionTypes": []}, interaction_types=["mentoring"],
+        limit=10,
+    )
+    assert [row["candidate"]["id"] for row in rows] == ["compatible"]
+
+
+class RecordingEmbedder:
+    def __init__(self):
+        self.texts = []
+
+    def embed(self, texts):
+        self.texts = texts
+        return [[1.0, 0.0] for _ in texts]
+
+
+def test_reciprocal_query_uses_need_interpreter_output():
+    requester = {
+        "id": "requester", "knowledge": [], "experience": [], "interests": [],
+        "canHelpWith": ["Python"], "lookingFor": ["mentoring"], "openTo": [], "projects": [],
+    }
+    candidate = {
+        "id": "candidate", "knowledge": [], "experience": [], "interests": [],
+        "canHelpWith": ["mentoring"], "lookingFor": ["Python help"],
+        "openTo": ["mentoring"], "projects": [],
+    }
+    embedder = RecordingEmbedder()
+    search_people(
+        profiles=[requester, candidate], requester=requester,
+        queries={"offers": "mentor", "interests": "", "needs": "custom reciprocal query"},
+        filters={"location": None, "interactionTypes": []}, interaction_types=["mentoring"],
+        limit=10, embedder=embedder,
+    )
+    assert embedder.texts[2] == "custom reciprocal query"
