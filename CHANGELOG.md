@@ -86,13 +86,39 @@ Branch `dev/denisetiya` menangani retrieval, prescore, dan orkestrasi matching.
 - **Mengapa:** Kamu ingin memakai provider kustom yang OpenAI-API-compatible
   dengan API key, base URL, dan model khusus, yang dikonfigurasi di `.env`.
 
+### 8. Normalisasi adaptif untuk provider non-OpenAI
+
+- **Sebelum:** Pipeline mengandalkan Structured Outputs (`text.format`) dari
+  Responses API; provider kustom (mis. gateway di belakang Cloudflare) menolak
+  streaming SDK, mengabaikan schema, dan mengembalikan JSON dengan key/tipe
+  berbeda (mis. `candidateId` bukan `userId`, `interactionType` string).
+- **Sesudah:**
+  - Fallback **stream → non-stream** (HTTP langsung dengan User-Agent curl)
+    bila SDK streaming diblokir provider.
+  - Untuk base_url non-OpenAI, `text.format` tidak dikirim; instruksi JSON
+    ditambahkan ke prompt (`_json_only_instruction`).
+  - Parsing toleran (`_parse_json_tolerant`) menangkap JSON dari markdown/prose.
+  - `_coerce_need` menormalisasi tipe need (target/hardFilters/retrievalQueries),
+    memetakan sinonim interaksi ("mentorship"→"mentoring") ke set kanonik.
+  - `_coerce_matches` menerima `userId`/`candidateId`/`id` dan nilai skor
+    alternatif (`score`/`matchScore`).
+  - `search_people` auto-fallback ke `lexical_similarity` saat embedding gagal.
+  - `PipelineConfig` default model dari `.env` (bukan hardcode `gpt-5.6-*`).
+  - Prompt `need_interpreter` v2 menetapkan kontrak output (interactionType
+    kanonik, bentuk target/hardFilters/retrievalQueries).
+- **Mengapa:** Agar pipeline tetap berjalan dan menghasilkan match yang bagus
+  di provider kustom yang tidak mendukung Structured Outputs. Hasil live:
+  query "student organization" → sarah (0.95) + intro benar; "senior dev
+  teaching beginners" → raka (0.85) + intro benar.
+
 ## Status implementasi
 
 Keempat bagian desain (precomputed index, restrukturisasi `search_people`,
 prescore terpusat, threshold judge) **sudah diimplementasikan**, ditambah
-laporan token per-run/per-user, seed 2.000 profil, dan provider kustom via
-`.env`. Verifikasi akhir: 33 test pass, keenam notebook lolos `marimo check`,
-`git diff --check` bersih.
+laporan token per-run/per-user, seed 2.000 profil, provider kustom via `.env`,
+dan normalisasi adaptif untuk provider non-OpenAI. Verifikasi akhir: 37 test
+pass, keenam notebook lolos `marimo check`, `git diff --check` bersih, dan
+pipeline live end-to-end berhasil di provider kustom (results sesuai harapan).
 
 ## Belum rilis / direncanakan
 
