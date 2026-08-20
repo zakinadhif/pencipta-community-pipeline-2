@@ -72,15 +72,27 @@ Branch `dev/denisetiya` menangani retrieval, prescore, dan orkestrasi matching.
 - **Mengapa:** Arena uji skala "kualitas + performa": membuktikan biaya
   embedding per pencarian konstan saat index dipakai.
 
+### 7. Provider OpenAI-compatible kustom via `.env`
+
+- **Sebelum:** Hanya OpenAI resmi: client dibuat dengan `OpenAI(api_key=...)`,
+  model default `gpt-5.6-*` dan `text-embedding-3-large`.
+- **Sesudah:** `src/config.py` menyediakan `provider_config()` dan
+  `make_client()`; `OPENAI_BASE_URL` (misal `https://.../v1`) di `.env` membuat
+  client memakai base URL tersebut. Model per tahap bisa di-set lewat
+  `NEED_MODEL` / `JUDGE_MODEL` / `INTRODUCTION_MODEL` / `EMBEDDING_MODEL`, dan
+  harga per model kustom via `MODEL_PRICE_<NAMA>=<input>,<output>`.
+  `pricing_for` mengembalikan harga 0 (tidak crash) untuk model tanpa harga.
+  URL asli hanya ada di `.env` (ter-ignore); tidak pernah di test/repo.
+- **Mengapa:** Kamu ingin memakai provider kustom yang OpenAI-API-compatible
+  dengan API key, base URL, dan model khusus, yang dikonfigurasi di `.env`.
+
 ## Status implementasi
 
 Keempat bagian desain (precomputed index, restrukturisasi `search_people`,
 prescore terpusat, threshold judge) **sudah diimplementasikan**, ditambah
-laporan token per-run/per-user dan seed 2.000 profil. Verifikasi akhir: semua
-test pass, keenam notebook lolos `marimo check`, `git diff --check` bersih.
+laporan token per-run/per-user, seed 2.000 profil, dan provider kustom via
+`.env`. Verifikasi akhir: 33 test pass, keenam notebook lolos `marimo check`,
+`git diff --check` bersih.
 
 ## Belum rilis / direncanakan
-
-- Provider kustom OpenAI-compatible (base URL + API key + model) via `.env` —
-  sedang dikerjakan.
 
