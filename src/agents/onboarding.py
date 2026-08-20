@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from openai import OpenAI
 
@@ -86,6 +86,43 @@ When enough information has been collected, call finishOnboarding.
 """
 ONBOARDING_CHAT_PROMPT = ONBOARDING_PROMPT
 
+ONBOARDING_TOOLS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "name": "getOnboardingState",
+        "description": "Return the current onboarding transcript, progress, and completion state.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "type": "function",
+        "name": "finishOnboarding",
+        "description": "Mark onboarding complete once enough useful information has been collected.",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+]
+
+_NON_ANSWERS = {
+    "hello",
+    "hi",
+    "hey",
+    "start",
+    "start my onboarding",
+    "let's start",
+    "lets start",
+}
+
 
 @dataclass(frozen=True)
 class Turn:
@@ -108,20 +145,108 @@ class OnboardingSession:
     def transcript(self) -> list[dict[str, str]]:
         return [{"role": turn.role, "content": turn.content} for turn in self.turns]
 
+    def meaningful_answer_count(self) -> int:
+        return sum(
+            turn.role == "user" and turn.content.strip().lower() not in _NON_ANSWERS
+            for turn in self.turns
+        )
+
+    def state(self) -> dict[str, Any]:
+        return {
+            "meaningfulUserAnswers": self.meaningful_answer_count(),
+            "finished": self.finished,
+            "transcript": self.transcript(),
+        }
+
+    @classmethod
+    def from_messages(cls, messages: list[Any]) -> OnboardingSession:
+        turns: list[Turn] = []
+        for message in messages:
+            role = getattr(message, "role", None)
+            content = getattr(message, "content", None)
+            if role in {"user", "assistant"} and isinstance(content, str):
+                turns.append(Turn(role, content))
+        return cls(turns=turns)
+
 
 class OnboardingInterviewer:
-    """Programmatic driver; Marimo's chat component uses the same base prompt."""
+    """Tool-enabled Responses API driver shared by Marimo and programmatic callers."""
 
-    def __init__(self, api_key: str) -> None:
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self, api_key: str | None = None, *, client: Any | None = None) -> None:
+        self.client = client or OpenAI(api_key=api_key)
 
-    def next_turn(self, session: OnboardingSession, *, model: str = "gpt-5.6-terra", reasoning_effort: str = "low") -> dict[str, Any]:
-        request: dict[str, Any] = {"model": model, "instructions": ONBOARDING_PROMPT, "input": json.dumps({"transcript": session.transcript()})}
+    def next_turn(
+        self,
+        session: OnboardingSession,
+        *,
+        model: str = "gpt-5.6-terra",
+        reasoning_effort: str = "low",
+        max_output_tokens: int = 300,
+        on_tool_event: Callable[[dict[str, Any]], None] | None = None,
+    ) -> dict[str, Any]:
+        input_items: list[Any] = session.transcript()
+        request: dict[str, Any] = {
+            "model": model,
+            "instructions": ONBOARDING_PROMPT,
+            "input": input_items,
+            "tools": ONBOARDING_TOOLS,
+            "tool_choice": {"type": "function", "name": "getOnboardingState"},
+            "max_output_tokens": max_output_tokens,
+        }
         if reasoning_effort != "none":
             request["reasoning"] = {"effort": reasoning_effort}
+
+        tool_events: list[dict[str, Any]] = []
         response = self.client.responses.create(**request)
+        for _ in range(8):
+            tool_calls = [item for item in response.output if item.type == "function_call"]
+            if not tool_calls:
+                break
+
+            input_items += response.output
+            for tool_call in tool_calls:
+                arguments = json.loads(tool_call.arguments or "{}")
+                result = self._execute_tool(tool_call.name, arguments, session)
+                event = {
+                    "name": tool_call.name,
+                    "arguments": arguments,
+                    "result": result,
+                    "call_id": tool_call.call_id,
+                }
+                tool_events.append(event)
+                if on_tool_event is not None:
+                    on_tool_event(event)
+                input_items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": tool_call.call_id,
+                        "output": json.dumps(result),
+                    }
+                )
+
+            follow_up = {**request, "input": input_items, "tool_choice": "auto"}
+            response = self.client.responses.create(**follow_up)
+        else:
+            raise RuntimeError("Onboarding interviewer exceeded the tool-call limit.")
+
         message = response.output_text.strip()
         if not message:
-            raise RuntimeError("Onboarding interviewer returned an empty message.")
+            message = "Thanks — I have enough to complete your onboarding." if session.finished else "What would you like me to know about you?"
         session.turns.append(Turn("assistant", message))
-        return {"message": message, "finished": False, "response": response.model_dump()}
+        return {
+            "message": message,
+            "finished": session.finished,
+            "tool_events": tool_events,
+            "response": response.model_dump(),
+        }
+
+    @staticmethod
+    def _execute_tool(name: str, arguments: dict[str, Any], session: OnboardingSession) -> dict[str, Any]:
+        if arguments:
+            return {"ok": False, "error": f"{name} does not accept arguments."}
+        if name == "getOnboardingState":
+            return session.state()
+        if name == "finishOnboarding":
+            session.finished = True
+            return {"ok": True, "finished": True}
+        return {"ok": False, "error": f"Unknown onboarding tool: {name}"}

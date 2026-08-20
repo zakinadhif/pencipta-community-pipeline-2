@@ -13,10 +13,10 @@ def _():
     import marimo as mo
     from dotenv import load_dotenv
 
-    from src.agents.onboarding import ONBOARDING_CHAT_PROMPT
+    from src.agents.onboarding import OnboardingInterviewer, OnboardingSession
 
     load_dotenv(Path(__file__).parent / ".env")
-    return ONBOARDING_CHAT_PROMPT, mo, os
+    return OnboardingInterviewer, OnboardingSession, mo, os
 
 
 @app.cell
@@ -32,23 +32,59 @@ def _(mo):
 
 
 @app.cell
-def _(ONBOARDING_CHAT_PROMPT, mo, os):
+def _(mo):
+    get_finished, set_finished = mo.state(False)
+    get_tool_events, set_tool_events = mo.state([])
+    return get_finished, get_tool_events, set_finished, set_tool_events
+
+
+@app.cell
+def _(OnboardingInterviewer, OnboardingSession, mo, os, set_finished, set_tool_events):
     api_key = os.getenv("OPENAI_API_KEY")
     mo.stop(not api_key, mo.callout("`OPENAI_API_KEY` is missing. Add it to the repository `.env`, then restart this notebook.", kind="warn"))
+    interviewer = OnboardingInterviewer(api_key)
+
+    def onboarding_model(messages, config):
+        session = OnboardingSession.from_messages(messages)
+        events = []
+        result = interviewer.next_turn(
+            session,
+            max_output_tokens=config.max_tokens,
+            on_tool_event=events.append,
+        )
+        set_tool_events(events)
+        set_finished(result["finished"])
+        return result["message"]
+
     chat = mo.ui.chat(
-        mo.ai.llm.openai(
-            "gpt-5.6-terra",
-            api_key=api_key,
-            system_message=ONBOARDING_CHAT_PROMPT,
-        ),
+        onboarding_model,
         prompts=["Start my onboarding"],
-        # This model accepts only its default temperature (1); Marimo's chat
-        # component otherwise supplies 0.5 by default.
         config={"max_tokens": 300, "temperature": 1},
         max_height=600,
     )
     chat
     return (chat,)
+
+
+@app.cell
+def _(get_finished, get_tool_events, mo):
+    events = get_tool_events()
+    status = (
+        mo.callout("Onboarding is complete.", kind="success")
+        if get_finished()
+        else mo.callout("Onboarding is still in progress.", kind="info")
+    )
+    mo.vstack(
+        [
+            status,
+            mo.accordion(
+                {
+                    f"Agent tools used on the latest turn ({len(events)})": mo.json_output(events)
+                }
+            ),
+        ]
+    )
+    return
 
 
 @app.cell
