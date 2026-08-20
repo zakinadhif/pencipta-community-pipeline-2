@@ -54,3 +54,33 @@ Branch `dev/denisetiya` menangani retrieval, prescore, dan orkestrasi matching.
   dan mengotori hasil. Mencatatnya sebagai tersembunyi menjaga recall tetap
   terukur sambil menurunkan biaya.
 
+### 5. Laporan konsumsi token AI
+
+- **Sebelum:** Tidak ada laporan token per pencarian maupun per user.
+- **Sesudah:** `src/evaluation/reporting.py` menyediakan `per_run_tokens(store)`
+  dan `per_requester_tokens(store)` dari tabel `llm_calls` + `runs` di DuckDB.
+  Ditampilkan di `06_evals.py` sebagai tabel "Per-run token & cost detail" dan
+  "Token consumption per requester".
+- **Mengapa:** Kamu ingin tahu konsumsi token AI secara per-run dan agregat per
+  user.
+
+### 6. Seed data 2.000 profil
+
+- **Sebelum:** Dataset sintetis 100 profil.
+- **Sesudah:** `data/generate_synthetic_profiles.py` memperluas ke 2.000 profil
+  deterministik (id unik `synthetic-XXXX`), diuji di `test_profiles.py`.
+- **Mengapa:** Arena uji skala "kualitas + performa": membuktikan biaya
+  embedding per pencarian konstan saat index dipakai.
+
+## Status implementasi
+
+Keempat bagian desain (precomputed index, restrukturisasi `search_people`,
+prescore terpusat, threshold judge) **sudah diimplementasikan**, ditambah
+laporan token per-run/per-user dan seed 2.000 profil. Verifikasi akhir: semua
+test pass, keenam notebook lolos `marimo check`, `git diff --check` bersih.
+
+## Belum rilis / direncanakan
+
+- Provider kustom OpenAI-compatible (base URL + API key + model) via `.env` —
+  sedang dikerjakan.
+

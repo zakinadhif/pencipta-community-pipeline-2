@@ -56,6 +56,7 @@ separately because it is aggregate rather than attributable to one request.
 ```powershell
 marimo check 01_onboarding.py 02_profile_compiler.py 03_retrieval.py 04_matching.py 05_end_to_end.py 06_evals.py
 marimo run 05_end_to_end.py
+python scripts/rebuild_index.py  # precompute the profile vector index
 python -m tests.live_smoke  # explicit, billable API smoke checks
 ```
 
