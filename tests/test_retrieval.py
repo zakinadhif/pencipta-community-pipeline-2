@@ -2,7 +2,28 @@ import json
 from pathlib import Path
 
 from src.retrieval.embeddings import profile_vectors
+from src.retrieval.prescore import interaction_score, weighted_prescore
 from src.retrieval.search import search_people
+
+
+def test_interaction_score_graded_below_two_overlaps():
+    assert interaction_score(["advice", "mentoring"], ["advice", "mentoring"]) == 1.0
+    assert interaction_score(["advice", "mentoring"], ["advice"]) == 0.5
+    assert interaction_score(["advice", "mentoring"], ["cofounding"]) == 0.0
+    assert interaction_score([], ["advice"]) == 0.0
+
+
+class _Weights:
+    offers_weight = 0.45
+    interests_weight = 0.20
+    reciprocity_weight = 0.20
+    interaction_weight = 0.15
+
+
+def test_weighted_prescore_preserves_ordering_and_clamps():
+    low = weighted_prescore(0.0, 0.0, 0.0, 0.0, _Weights())
+    high = weighted_prescore(0.9, 0.5, 0.4, 1.0, _Weights())
+    assert 0.0 <= low <= high <= 1.0
 
 
 def _profiles():
