@@ -1,10 +1,2798 @@
 [
-  {"id":"maya","name":"Maya","headline":"Campus marketplace founder","summary":"Built and grew a student marketplace through student organizations.","knowledge":["campus distribution","early user acquisition"],"experience":["launched a campus marketplace","recruited first users through student groups"],"interests":["student entrepreneurship","marketplaces"],"canHelpWith":["early user acquisition for student products","community distribution"],"lookingFor":["design feedback"],"openTo":["advice","mentoring"],"location":"Bandung"},
-  {"id":"raka","name":"Raka","headline":"Senior developer and patient mentor","summary":"Backend engineer who runs beginner programming study groups.","knowledge":["Python","backend engineering"],"experience":["six years building web services","mentored programming beginners"],"interests":["teaching","developer tools"],"canHelpWith":["learning programming","backend architecture"],"lookingFor":["people interested in accounting for small teams"],"openTo":["advice","mentoring"],"location":"Jakarta"},
-  {"id":"sarah","name":"Sarah","headline":"Student organization organizer","summary":"Kept a volunteer group active across multiple semesters.","knowledge":["volunteer retention","community operations"],"experience":["led a student organization","designed volunteer onboarding"],"interests":["community building","education"],"canHelpWith":["keeping volunteers engaged","student organization operations"],"lookingFor":["help with a simple member dashboard"],"openTo":["advice","collaboration"],"location":"Bandung"},
-  {"id":"dimas","name":"Dimas","headline":"Brutalist product designer","summary":"Designer looking for unusual side projects and collaborators.","knowledge":["product design","visual systems"],"experience":["designed experimental web products"],"interests":["brutalist interfaces","side projects"],"canHelpWith":["product design critique","interface design"],"lookingFor":["developers for side projects"],"openTo":["collaboration","advice"],"location":"Jakarta"},
-  {"id":"hana","name":"Hana","headline":"Japan travel planner","summary":"Muslim traveler who has planned independent trips across Japan.","knowledge":["Japan travel","halal travel planning"],"experience":["planned three independent Japan trips","researched prayer spaces and halal food"],"interests":["travel","food"],"canHelpWith":["planning a Muslim-friendly Japan trip"],"lookingFor":["photography companions"],"openTo":["advice"],"location":"Yogyakarta"},
-  {"id":"niko","name":"Niko","headline":"AT Protocol operator","summary":"Runs a personal AT Protocol PDS and enjoys explaining infra tradeoffs.","knowledge":["AT Protocol","self-hosting","Docker"],"experience":["deployed an AT Protocol PDS","operates a home server"],"interests":["decentralized social networks","infrastructure"],"canHelpWith":["deploying an AT Protocol PDS","self-hosted services"],"lookingFor":["people building social software"],"openTo":["advice","mentoring","collaboration"],"location":"Jakarta"},
-  {"id":"lina","name":"Lina","headline":"Accountant learning to code","summary":"Small-business accountant currently learning Python automation.","knowledge":["small business accounting"],"experience":["prepared books for local businesses"],"interests":["Python","automation"],"canHelpWith":["basic accounting","bookkeeping workflows"],"lookingFor":["help learning programming"],"openTo":["advice","collaboration"],"location":"Bandung"},
-  {"id":"adi","name":"Adi","headline":"Early-stage developer","summary":"Learning web development and looking for peers.","knowledge":["HTML","CSS"],"experience":["small personal websites"],"interests":["programming","startups"],"canHelpWith":["basic frontend practice"],"lookingFor":["a senior developer mentor"],"openTo":["mentoring","collaboration"],"location":"Bandung"}
+  {
+    "id": "maya",
+    "name": "Maya",
+    "headline": "Campus marketplace founder",
+    "summary": "Built and grew a student marketplace through student organizations.",
+    "knowledge": [
+      "campus distribution",
+      "early user acquisition"
+    ],
+    "experience": [
+      "launched a campus marketplace",
+      "recruited first users through student groups"
+    ],
+    "interests": [
+      "student entrepreneurship",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "early user acquisition for student products",
+      "community distribution"
+    ],
+    "lookingFor": [
+      "design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "raka",
+    "name": "Raka",
+    "headline": "Senior developer and patient mentor",
+    "summary": "Backend engineer who runs beginner programming study groups.",
+    "knowledge": [
+      "Python",
+      "backend engineering"
+    ],
+    "experience": [
+      "six years building web services",
+      "mentored programming beginners"
+    ],
+    "interests": [
+      "teaching",
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "learning programming",
+      "backend architecture"
+    ],
+    "lookingFor": [
+      "people interested in accounting for small teams"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "sarah",
+    "name": "Sarah",
+    "headline": "Student organization organizer",
+    "summary": "Kept a volunteer group active across multiple semesters.",
+    "knowledge": [
+      "volunteer retention",
+      "community operations"
+    ],
+    "experience": [
+      "led a student organization",
+      "designed volunteer onboarding"
+    ],
+    "interests": [
+      "community building",
+      "education"
+    ],
+    "canHelpWith": [
+      "keeping volunteers engaged",
+      "student organization operations"
+    ],
+    "lookingFor": [
+      "help with a simple member dashboard"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "dimas",
+    "name": "Dimas",
+    "headline": "Brutalist product designer",
+    "summary": "Designer looking for unusual side projects and collaborators.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "designed experimental web products"
+    ],
+    "interests": [
+      "brutalist interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "product design critique",
+      "interface design"
+    ],
+    "lookingFor": [
+      "developers for side projects"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "hana",
+    "name": "Hana",
+    "headline": "Japan travel planner",
+    "summary": "Muslim traveler who has planned independent trips across Japan.",
+    "knowledge": [
+      "Japan travel",
+      "halal travel planning"
+    ],
+    "experience": [
+      "planned three independent Japan trips",
+      "researched prayer spaces and halal food"
+    ],
+    "interests": [
+      "travel",
+      "food"
+    ],
+    "canHelpWith": [
+      "planning a Muslim-friendly Japan trip"
+    ],
+    "lookingFor": [
+      "photography companions"
+    ],
+    "openTo": [
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "niko",
+    "name": "Niko",
+    "headline": "AT Protocol operator",
+    "summary": "Runs a personal AT Protocol PDS and enjoys explaining infra tradeoffs.",
+    "knowledge": [
+      "AT Protocol",
+      "self-hosting",
+      "Docker"
+    ],
+    "experience": [
+      "deployed an AT Protocol PDS",
+      "operates a home server"
+    ],
+    "interests": [
+      "decentralized social networks",
+      "infrastructure"
+    ],
+    "canHelpWith": [
+      "deploying an AT Protocol PDS",
+      "self-hosted services"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "lina",
+    "name": "Lina",
+    "headline": "Accountant learning to code",
+    "summary": "Small-business accountant currently learning Python automation.",
+    "knowledge": [
+      "small business accounting"
+    ],
+    "experience": [
+      "prepared books for local businesses"
+    ],
+    "interests": [
+      "Python",
+      "automation"
+    ],
+    "canHelpWith": [
+      "basic accounting",
+      "bookkeeping workflows"
+    ],
+    "lookingFor": [
+      "help learning programming"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "adi",
+    "name": "Adi",
+    "headline": "Early-stage developer",
+    "summary": "Learning web development and looking for peers.",
+    "knowledge": [
+      "HTML",
+      "CSS"
+    ],
+    "experience": [
+      "small personal websites"
+    ],
+    "interests": [
+      "programming",
+      "startups"
+    ],
+    "canHelpWith": [
+      "basic frontend practice"
+    ],
+    "lookingFor": [
+      "a senior developer mentor"
+    ],
+    "openTo": [
+      "mentoring",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-001",
+    "name": "Synthetic Backend 1",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 001: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-002",
+    "name": "Synthetic Community 1",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 002: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-003",
+    "name": "Synthetic Designer 1",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 003: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-004",
+    "name": "Synthetic Founder 1",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 004: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-005",
+    "name": "Synthetic Data 1",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 005: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-006",
+    "name": "Synthetic Finance 1",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 006: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-007",
+    "name": "Synthetic Mobile 1",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 007: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-008",
+    "name": "Synthetic Infra 1",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 008: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-009",
+    "name": "Synthetic Research 1",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 009: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-010",
+    "name": "Synthetic Educator 1",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 010: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-011",
+    "name": "Synthetic Travel 1",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 011: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-012",
+    "name": "Synthetic Hardware 1",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 012: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-013",
+    "name": "Synthetic Backend 2",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 013: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-014",
+    "name": "Synthetic Community 2",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 014: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-015",
+    "name": "Synthetic Designer 2",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 015: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-016",
+    "name": "Synthetic Founder 2",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 016: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-017",
+    "name": "Synthetic Data 2",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 017: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-018",
+    "name": "Synthetic Finance 2",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 018: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-019",
+    "name": "Synthetic Mobile 2",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 019: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-020",
+    "name": "Synthetic Infra 2",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 020: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-021",
+    "name": "Synthetic Research 2",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 021: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-022",
+    "name": "Synthetic Educator 2",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 022: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-023",
+    "name": "Synthetic Travel 2",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 023: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-024",
+    "name": "Synthetic Hardware 2",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 024: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-025",
+    "name": "Synthetic Backend 3",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 025: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-026",
+    "name": "Synthetic Community 3",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 026: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-027",
+    "name": "Synthetic Designer 3",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 027: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-028",
+    "name": "Synthetic Founder 3",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 028: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-029",
+    "name": "Synthetic Data 3",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 029: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-030",
+    "name": "Synthetic Finance 3",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 030: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-031",
+    "name": "Synthetic Mobile 3",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 031: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-032",
+    "name": "Synthetic Infra 3",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 032: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-033",
+    "name": "Synthetic Research 3",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 033: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-034",
+    "name": "Synthetic Educator 3",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 034: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-035",
+    "name": "Synthetic Travel 3",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 035: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-036",
+    "name": "Synthetic Hardware 3",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 036: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-037",
+    "name": "Synthetic Backend 4",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 037: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-038",
+    "name": "Synthetic Community 4",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 038: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-039",
+    "name": "Synthetic Designer 4",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 039: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-040",
+    "name": "Synthetic Founder 4",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 040: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-041",
+    "name": "Synthetic Data 4",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 041: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-042",
+    "name": "Synthetic Finance 4",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 042: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-043",
+    "name": "Synthetic Mobile 4",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 043: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-044",
+    "name": "Synthetic Infra 4",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 044: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-045",
+    "name": "Synthetic Research 4",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 045: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-046",
+    "name": "Synthetic Educator 4",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 046: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-047",
+    "name": "Synthetic Travel 4",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 047: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-048",
+    "name": "Synthetic Hardware 4",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 048: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-049",
+    "name": "Synthetic Backend 5",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 049: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-050",
+    "name": "Synthetic Community 5",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 050: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-051",
+    "name": "Synthetic Designer 5",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 051: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-052",
+    "name": "Synthetic Founder 5",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 052: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-053",
+    "name": "Synthetic Data 5",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 053: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-054",
+    "name": "Synthetic Finance 5",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 054: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-055",
+    "name": "Synthetic Mobile 5",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 055: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-056",
+    "name": "Synthetic Infra 5",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 056: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-057",
+    "name": "Synthetic Research 5",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 057: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-058",
+    "name": "Synthetic Educator 5",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 058: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-059",
+    "name": "Synthetic Travel 5",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 059: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-060",
+    "name": "Synthetic Hardware 5",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 060: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-061",
+    "name": "Synthetic Backend 6",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 061: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-062",
+    "name": "Synthetic Community 6",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 062: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-063",
+    "name": "Synthetic Designer 6",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 063: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-064",
+    "name": "Synthetic Founder 6",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 064: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-065",
+    "name": "Synthetic Data 6",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 065: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-066",
+    "name": "Synthetic Finance 6",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 066: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-067",
+    "name": "Synthetic Mobile 6",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 067: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-068",
+    "name": "Synthetic Infra 6",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 068: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-069",
+    "name": "Synthetic Research 6",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 069: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-070",
+    "name": "Synthetic Educator 6",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 070: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-071",
+    "name": "Synthetic Travel 6",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 071: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-072",
+    "name": "Synthetic Hardware 6",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 072: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-073",
+    "name": "Synthetic Backend 7",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 073: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-074",
+    "name": "Synthetic Community 7",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 074: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-075",
+    "name": "Synthetic Designer 7",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 075: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-076",
+    "name": "Synthetic Founder 7",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 076: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-077",
+    "name": "Synthetic Data 7",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 077: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-078",
+    "name": "Synthetic Finance 7",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 078: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-079",
+    "name": "Synthetic Mobile 7",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 079: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-080",
+    "name": "Synthetic Infra 7",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 080: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-081",
+    "name": "Synthetic Research 7",
+    "headline": "User researcher",
+    "summary": "Synthetic fixture 081: user researcher open to focused knowledge exchange.",
+    "knowledge": [
+      "qualitative research",
+      "interviewing"
+    ],
+    "experience": [
+      "ran product discovery studies"
+    ],
+    "interests": [
+      "public-interest technology"
+    ],
+    "canHelpWith": [
+      "research planning"
+    ],
+    "lookingFor": [
+      "prototype collaborators"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-082",
+    "name": "Synthetic Educator 7",
+    "headline": "Programming educator",
+    "summary": "Synthetic fixture 082: programming educator open to focused knowledge exchange.",
+    "knowledge": [
+      "software fundamentals",
+      "curriculum design"
+    ],
+    "experience": [
+      "mentored beginner developers"
+    ],
+    "interests": [
+      "teaching",
+      "learning communities"
+    ],
+    "canHelpWith": [
+      "learning programming"
+    ],
+    "lookingFor": [
+      "real project examples"
+    ],
+    "openTo": [
+      "mentoring",
+      "advice"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-083",
+    "name": "Synthetic Travel 7",
+    "headline": "Independent travel planner",
+    "summary": "Synthetic fixture 083: independent travel planner open to focused knowledge exchange.",
+    "knowledge": [
+      "travel planning",
+      "cross-cultural logistics"
+    ],
+    "experience": [
+      "planned independent regional trips"
+    ],
+    "interests": [
+      "food",
+      "photography"
+    ],
+    "canHelpWith": [
+      "practical trip planning"
+    ],
+    "lookingFor": [
+      "local recommendations"
+    ],
+    "openTo": [
+      "advice",
+      "meeting_people"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-084",
+    "name": "Synthetic Hardware 7",
+    "headline": "Hardware prototyper",
+    "summary": "Synthetic fixture 084: hardware prototyper open to focused knowledge exchange.",
+    "knowledge": [
+      "electronics",
+      "rapid prototyping"
+    ],
+    "experience": [
+      "built connected-device prototypes"
+    ],
+    "interests": [
+      "civic technology",
+      "maker communities"
+    ],
+    "canHelpWith": [
+      "hardware prototyping"
+    ],
+    "lookingFor": [
+      "software collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-085",
+    "name": "Synthetic Backend 8",
+    "headline": "Backend engineer",
+    "summary": "Synthetic fixture 085: backend engineer open to focused knowledge exchange.",
+    "knowledge": [
+      "Python",
+      "APIs"
+    ],
+    "experience": [
+      "built production web services"
+    ],
+    "interests": [
+      "developer tools"
+    ],
+    "canHelpWith": [
+      "backend architecture reviews"
+    ],
+    "lookingFor": [
+      "product design feedback"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-086",
+    "name": "Synthetic Community 8",
+    "headline": "Community organizer",
+    "summary": "Synthetic fixture 086: community organizer open to focused knowledge exchange.",
+    "knowledge": [
+      "community operations",
+      "facilitation"
+    ],
+    "experience": [
+      "ran volunteer programs"
+    ],
+    "interests": [
+      "education",
+      "communities"
+    ],
+    "canHelpWith": [
+      "volunteer onboarding"
+    ],
+    "lookingFor": [
+      "simple automation help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Jakarta"
+  },
+  {
+    "id": "synthetic-087",
+    "name": "Synthetic Designer 8",
+    "headline": "Product designer",
+    "summary": "Synthetic fixture 087: product designer open to focused knowledge exchange.",
+    "knowledge": [
+      "product design",
+      "visual systems"
+    ],
+    "experience": [
+      "shipped web product designs"
+    ],
+    "interests": [
+      "unusual interfaces",
+      "side projects"
+    ],
+    "canHelpWith": [
+      "design critique"
+    ],
+    "lookingFor": [
+      "engineering collaborators"
+    ],
+    "openTo": [
+      "collaboration",
+      "advice"
+    ],
+    "location": "Yogyakarta"
+  },
+  {
+    "id": "synthetic-088",
+    "name": "Synthetic Founder 8",
+    "headline": "Early-stage founder",
+    "summary": "Synthetic fixture 088: early-stage founder open to focused knowledge exchange.",
+    "knowledge": [
+      "customer discovery",
+      "distribution"
+    ],
+    "experience": [
+      "launched a small digital product"
+    ],
+    "interests": [
+      "startups",
+      "marketplaces"
+    ],
+    "canHelpWith": [
+      "first-user research"
+    ],
+    "lookingFor": [
+      "technical architecture help"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Surabaya"
+  },
+  {
+    "id": "synthetic-089",
+    "name": "Synthetic Data 8",
+    "headline": "Data analyst",
+    "summary": "Synthetic fixture 089: data analyst open to focused knowledge exchange.",
+    "knowledge": [
+      "SQL",
+      "data visualization"
+    ],
+    "experience": [
+      "built operational dashboards"
+    ],
+    "interests": [
+      "open data",
+      "automation"
+    ],
+    "canHelpWith": [
+      "analytics and measurement"
+    ],
+    "lookingFor": [
+      "domain experts"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Malang"
+  },
+  {
+    "id": "synthetic-090",
+    "name": "Synthetic Finance 8",
+    "headline": "Small-business finance practitioner",
+    "summary": "Synthetic fixture 090: small-business finance practitioner open to focused knowledge exchange.",
+    "knowledge": [
+      "accounting",
+      "bookkeeping"
+    ],
+    "experience": [
+      "supported small-business finances"
+    ],
+    "interests": [
+      "automation",
+      "programming"
+    ],
+    "canHelpWith": [
+      "accounting workflows"
+    ],
+    "lookingFor": [
+      "help learning Python"
+    ],
+    "openTo": [
+      "advice",
+      "collaboration"
+    ],
+    "location": "Denpasar"
+  },
+  {
+    "id": "synthetic-091",
+    "name": "Synthetic Mobile 8",
+    "headline": "Mobile developer",
+    "summary": "Synthetic fixture 091: mobile developer open to focused knowledge exchange.",
+    "knowledge": [
+      "mobile apps",
+      "frontend engineering"
+    ],
+    "experience": [
+      "published a mobile application"
+    ],
+    "interests": [
+      "accessibility",
+      "education"
+    ],
+    "canHelpWith": [
+      "mobile prototyping"
+    ],
+    "lookingFor": [
+      "user research partners"
+    ],
+    "openTo": [
+      "collaboration",
+      "mentoring"
+    ],
+    "location": "Bandung"
+  },
+  {
+    "id": "synthetic-092",
+    "name": "Synthetic Infra 8",
+    "headline": "Infrastructure operator",
+    "summary": "Synthetic fixture 092: infrastructure operator open to focused knowledge exchange.",
+    "knowledge": [
+      "Linux",
+      "containers",
+      "self-hosting"
+    ],
+    "experience": [
+      "operated self-hosted services"
+    ],
+    "interests": [
+      "decentralized systems"
+    ],
+    "canHelpWith": [
+      "deployment and operations"
+    ],
+    "lookingFor": [
+      "people building social software"
+    ],
+    "openTo": [
+      "advice",
+      "mentoring"
+    ],
+    "location": "Jakarta"
+  }
 ]

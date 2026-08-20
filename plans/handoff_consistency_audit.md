@@ -1,6 +1,6 @@
 # Handoff Consistency Audit and Remediation Log
 
-Status: in progress  
+Status: complete
 Created: 2026-08-20  
 Source of truth:
 
@@ -45,12 +45,12 @@ This file is intentionally kept as a durable, uncommitted execution artifact unt
 - [x] `02_profile_compiler.py`: show exact request, raw response, parsed profile, trace metrics, prompt version, optional existing profile, and an editable accepted draft.
 - [x] `03_retrieval.py`: implement requester/query/need controls, weights/count controls, directional queries, similarity/prescore table, and candidate detail inspection.
 - [x] `04_matching.py`: implement isolated judge controls, exact judge input, raw stream, structured matches, prescore comparison, and saved human ratings.
-- [ ] `05_end_to_end.py`: show exact inputs and each stage in order, trace tables, aggregate metrics, failures, and visible progressive stream state.
+- [x] `05_end_to_end.py`: show exact inputs and each stage in order, trace tables, aggregate metrics, failures, and visible progressive stream state.
 - [x] `06_evals.py`: implement evaluation runs/comparison views and Good@K, AnyGood@K, latency/cost, and retrieval-recall proxy metrics.
 
 ### D. Dataset and documentation
 
-- [ ] Expand the synthetic dataset toward the handoff's 100-profile minimum while keeping it inspectable and deterministic.
+- [x] Expand the synthetic dataset toward the handoff's 100-profile minimum while keeping it inspectable and deterministic.
 - [x] Include all six canonical specific evaluation queries from the MVP handoff.
 - [x] Correct README paths and describe every root notebook accurately.
 - [x] Ensure DuckDB location and documentation agree.
@@ -60,7 +60,7 @@ This file is intentionally kept as a durable, uncommitted execution artifact unt
 - [x] Unit tests cover strict schemas, interaction filtering, directional retrieval, onboarding completion, tracing/costs, metrics, and malformed judge output.
 - [x] All tests pass.
 - [x] All six notebooks pass `marimo check`.
-- [ ] Targeted live API smoke tests pass for onboarding tools and profile structured output.
+- [x] Targeted live API smoke tests pass for onboarding tools and profile structured output.
 - [x] `git diff --check` passes.
 - [x] Working tree contains only deliberate, uncommitted remediation changes.
 
@@ -81,3 +81,8 @@ This file is intentionally kept as a durable, uncommitted execution artifact unt
 - 2026-08-20: Remediation artifact created; implementation started.
 - 2026-08-20: Continued remediation; completed evaluation metrics/lab and canonical query coverage, corrected README, and fixed a Marimo cross-cell definition error.
 - 2026-08-20: Verification snapshot: 12 tests passed, all six notebooks passed `marimo check`, and `git diff --check` passed. Live API smoke tests and dataset expansion remain outstanding.
+- 2026-08-20: Committed the first verified remediation snapshot as `aded8dd`.
+- 2026-08-20: Repaired stale end-to-end pricing configuration and added progressive stream, exact-input, trace, usage, latency, cost, response-ID, and failure inspection.
+- 2026-08-20: Expanded the fixture dataset deterministically to 100 unique profiles and added a scale/uniqueness regression test.
+- 2026-08-20: Targeted billable live smoke checks passed for onboarding tool execution and strict profile Structured Outputs.
+- 2026-08-20: Final verification: 13 tests passed, all six notebooks passed `marimo check`, and `git diff --check` passed. Remediation complete.

@@ -1,7 +1,7 @@
 import marimo
 
 
-__generated_with = "0.18.3"
+__generated_with = "0.24.0"
 app = marimo.App(width="full", app_title="Matching Pipeline Experiment Harness")
 
 
@@ -82,13 +82,10 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    mo.md("## Cost-estimate rates (USD per million tokens)")
-    input_rate = mo.ui.number(label="Input", start=0, step=0.01, value=0.0)
-    cached_rate = mo.ui.number(label="Cached input", start=0, step=0.01, value=0.0)
-    output_rate = mo.ui.number(label="Output", start=0, step=0.01, value=0.0)
+    max_output = mo.ui.number(label="Maximum output tokens per model stage", start=256, stop=8192, step=256, value=1600)
     run = mo.ui.run_button(label="Run live pipeline", kind="success")
-    mo.hstack([input_rate, cached_rate, output_rate, run], justify="start")
-    return cached_rate, input_rate, output_rate, run
+    mo.hstack([max_output, run], justify="start")
+    return max_output, run
 
 
 @app.cell
@@ -115,9 +112,9 @@ def _(admin_key, mo, os, store, sync_authoritative_costs, sync_costs):
 
 
 @app.cell
-def _(api_key, cached_rate, input_rate, interaction_weight, interests_weight, intro_model,
+def _(api_key, interaction_weight, interests_weight, intro_model,
           judge_model, need_model, offers_weight, os, Pipeline, PipelineConfig, profiles,
-          query, reasoning, reciprocity_weight, requester, retrieval_count, run, shortlist, store, mo):
+          query, reasoning, reciprocity_weight, requester, retrieval_count, run, shortlist, store, mo, max_output):
     import time
 
     mo.stop(not run.value)
@@ -133,16 +130,23 @@ def _(api_key, cached_rate, input_rate, interaction_weight, interests_weight, in
         retrieval_count=int(retrieval_count.value), judge_shortlist=int(shortlist.value),
         offers_weight=float(offers_weight.value), interests_weight=float(interests_weight.value),
         reciprocity_weight=float(reciprocity_weight.value), interaction_weight=float(interaction_weight.value),
-        input_per_million=float(input_rate.value), cached_input_per_million=float(cached_rate.value),
-        output_per_million=float(output_rate.value),
+        max_output_tokens=int(max_output.value),
     )
     streamed = {"need": [], "judge": []}
+    def show_delta(stage, delta):
+        streamed[stage].append(delta)
+        mo.output.replace(mo.vstack([
+            mo.md(f"### Live stage: `{stage}`"),
+            mo.md(f"```text\n{''.join(streamed[stage])}\n```"),
+        ]))
     with mo.status.spinner(title="Running pipeline and recording stream events…"):
         result = Pipeline(store, profiles, project_secret).run(
             requester.value, selected_query, config,
-            on_delta=lambda stage, delta: streamed[stage].append(delta),
+            on_delta=show_delta,
         )
     result["streamed_text"] = {stage: "".join(chunks) for stage, chunks in streamed.items()}
+    result["exact_input"] = {"requester_id": requester.value, "query": selected_query, "config": config.__dict__}
+    result["traces"] = store.dataframe("select stage, call_type, model, reasoning_effort, prompt_version, request_json, response_json, input_tokens, cached_input_tokens, output_tokens, reasoning_tokens, total_tokens, ttft_ms, latency_ms, estimated_cost_usd, response_id, error from llm_calls where run_id = ? order by created_at", [result["run_id"]]).to_dict("records")
     result["finished_at"] = time.time()
     return result,
 
@@ -156,6 +160,10 @@ def _(mo, result):
         mo.callout(f"Run `{result['run_id']}` completed in {result['total_latency_ms']:.0f} ms; estimated per-call cost: ${result['estimated_cost_usd']:.6f}.", kind="success")
     mo.md("## Streamed model text (captured verbatim)")
     mo.accordion({"Need interpreter stream": mo.md(f"```text\n{result['streamed_text']['need']}\n```"), "Judge stream": mo.md(f"```text\n{result['streamed_text']['judge']}\n```")})
+    mo.md("## Exact experiment input")
+    mo.json_output(result["exact_input"])
+    mo.md("## Stored stage traces and aggregate metrics")
+    mo.ui.table(result["traces"], selection=None)
     return
 
 

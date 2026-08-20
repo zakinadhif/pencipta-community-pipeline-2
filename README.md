@@ -35,6 +35,9 @@ Live runs persist every intermediate result in `data/runs.duckdb`. The bundled
 synthetic profiles and evaluation queries can be inspected without an API key;
 executing the model stages requires one.
 
+The 100-profile fixture is deterministic. Regenerate it after editing the eight
+canonical anchor profiles with `python data/generate_synthetic_profiles.py`.
+
 ## What is persisted
 
 - immutable run configuration and profile snapshots
@@ -53,6 +56,7 @@ separately because it is aggregate rather than attributable to one request.
 ```powershell
 marimo check 01_onboarding.py 02_profile_compiler.py 03_retrieval.py 04_matching.py 05_end_to_end.py 06_evals.py
 marimo run 05_end_to_end.py
+python -m tests.live_smoke  # explicit, billable API smoke checks
 ```
 
 No API key is written to DuckDB or source control.

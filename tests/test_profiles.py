@@ -6,6 +6,13 @@ import pytest
 from src.schemas.profile import ProfileDraft, ProfileValidationError
 
 
+def test_synthetic_dataset_has_minimum_scale_and_unique_ids():
+    profiles = json.loads((Path(__file__).parents[1] / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
+    assert len(profiles) >= 100
+    assert len({profile["id"] for profile in profiles}) == len(profiles)
+    assert {"niko", "raka", "sarah", "dimas", "hana", "lina"} <= {profile["id"] for profile in profiles}
+
+
 def test_synthetic_profiles_conform_to_profile_ontology():
     profiles = json.loads((Path(__file__).parents[1] / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
     for profile in profiles:
