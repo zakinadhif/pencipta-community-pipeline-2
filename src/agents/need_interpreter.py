@@ -1,6 +1,6 @@
 """Prompt contract for turning a request into directional search criteria."""
 
-NEED_INTERPRETER_VERSION = "need_interpreter_v1"
+NEED_INTERPRETER_VERSION = "need_interpreter_v2"
 NEED_INTERPRETER_PROMPT = """You interpret a user's request for another human.
 
 The user often describes a problem rather than a profession.
@@ -48,6 +48,21 @@ Search for complementary capability, not merely similarity.
 
 Someone needing a designer should generally be matched against people who
 can design, not people who also need a designer.
+
+OUTPUT CONTRACT (important):
+
+- "interactionType" must be a JSON array drawn ONLY from these values:
+  collaboration, mentoring, being_mentored, cofounding, friendship, advice,
+  recommendations, hiring, being_hired, meeting_people.
+  Map phrases to the closest value (e.g. "mentorship" -> mentoring,
+  "collaborate" -> collaboration).
+- "target" must be a JSON object with "knowledge", "experience", and
+  "interests", each an array of strings.
+- "hardFilters" must be a JSON object with "location" (string or null) and
+  "interactionTypes" (an array of the interactionType values above).
+- "retrievalQueries" must be a JSON object with "offers", "interests", and
+  "needs", each a single string describing the search intent.
+- "softPreferences" and "avoidMatchingOn" are arrays of strings.
 
 Return a structured search plan.
 """

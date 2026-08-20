@@ -29,7 +29,8 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
     With an index, only the three query texts are embedded (one batched call) and
     candidate vectors are read from the precomputed index. Without an index but
     with an embedder, all candidates are embedded per search (dev fallback).
-    Without an embedder, a lexical similarity baseline is used.
+    Without an embedder (or when embedding fails), a lexical similarity baseline
+    is used so the pipeline never crashes on embedding availability.
     """
     if weights is None:
         weights = _DefaultWeights()
@@ -39,7 +40,7 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
     query_texts = [queries.get("offers", ""), queries.get("interests", ""), reciprocal_query_text]
 
     if index is not None:
-        vectors = embedder.embed(query_texts) if embedder else None
+        vectors = _safe_embed(embedder, query_texts)
         if vectors is None:
             return _rank(_union_top_n(_lexical_rows(candidates, query_texts, requester_vectors), per_dimension_count), weights=weights, limit=limit, min_prescore=min_prescore, interaction_types=interaction_types)
         offer_query, interest_query, reciprocal_query = vectors[:3]
@@ -55,7 +56,9 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
         return _rank(_union_top_n(rows, per_dimension_count), weights=weights, limit=limit, min_prescore=min_prescore, interaction_types=interaction_types)
     if embedder:
         candidate_docs = [profile_vectors(profile) for profile in candidates]
-        vectors = embedder.embed(query_texts + [doc for triple in candidate_docs for doc in (triple.offers, triple.interests, triple.needs)])
+        vectors = _safe_embed(embedder, query_texts + [doc for triple in candidate_docs for doc in (triple.offers, triple.interests, triple.needs)])
+        if vectors is None:
+            return _rank(_union_top_n(_lexical_rows(candidates, query_texts, requester_vectors), per_dimension_count), weights=weights, limit=limit, min_prescore=min_prescore, interaction_types=interaction_types)
         offer_query, interest_query, reciprocal_query = vectors[:3]
         rows = []
         for index_, candidate in enumerate(candidates):
@@ -63,6 +66,16 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
             rows.append({"candidate": candidate, "offers_similarity": cosine_similarity(offer_query, vectors[base]), "interests_similarity": cosine_similarity(interest_query, vectors[base + 1]), "reciprocal_similarity": cosine_similarity(reciprocal_query, vectors[base + 2])})
         return _rank(_union_top_n(rows, per_dimension_count), weights=weights, limit=limit, min_prescore=min_prescore, interaction_types=interaction_types)
     return _rank(_union_top_n(_lexical_rows(candidates, query_texts, requester_vectors), per_dimension_count), weights=weights, limit=limit, min_prescore=min_prescore, interaction_types=interaction_types)
+
+
+def _safe_embed(embedder: Embedder | None, texts: list[str]) -> list[list[float]] | None:
+    """Embed, returning None on any embedding failure so search falls back to lexical."""
+    if embedder is None:
+        return None
+    try:
+        return embedder.embed(texts)
+    except Exception:
+        return None
 
 
 def _cos(index: EmbeddingIndex, profile_id: str, kind: str, query: list[float]) -> float:

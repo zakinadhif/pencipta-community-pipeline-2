@@ -4,13 +4,13 @@ import json
 import time
 import urllib.parse
 import urllib.request
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from .agents.introduction import INTRODUCTION_PROMPT, INTRODUCTION_VERSION
 from .agents.match_judge import MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION
 from .agents.need_interpreter import NEED_INTERPRETER_PROMPT, NEED_INTERPRETER_VERSION
-from .config import DEFAULT_INTRO_MODEL, DEFAULT_JUDGE_MODEL, DEFAULT_NEED_MODEL, make_client
+from .config import DEFAULT_INTRO_MODEL, DEFAULT_JUDGE_MODEL, DEFAULT_NEED_MODEL, make_client, provider_config
 from .retrieval.embeddings import EMBEDDING_MODEL, OpenAIEmbedder
 from .retrieval.index import EmbeddingIndex
 from .retrieval.search import search_people
@@ -24,9 +24,10 @@ INTRODUCTION_SCHEMA = {"type": "object", "additionalProperties": False, "require
 
 @dataclass
 class PipelineConfig:
-    need_model: str = DEFAULT_NEED_MODEL
-    judge_model: str = DEFAULT_JUDGE_MODEL
-    introduction_model: str = DEFAULT_INTRO_MODEL
+    need_model: str = field(default_factory=lambda: provider_config()["need_model"])
+    judge_model: str = field(default_factory=lambda: provider_config()["judge_model"])
+    introduction_model: str = field(default_factory=lambda: provider_config()["introduction_model"])
+    embedding_model: str = field(default_factory=lambda: provider_config()["embedding_model"])
     need_reasoning_effort: str = "low"
     judge_reasoning_effort: str = "medium"
     introduction_reasoning_effort: str = "low"
@@ -44,6 +45,175 @@ def _dump(value: Any) -> Any:
     return value.model_dump() if hasattr(value, "model_dump") else value
 
 
+def _parse_json_tolerant(text: str) -> Any:
+    """Parse model output as JSON, tolerating markdown fences, prose before/after
+    a JSON object, or a single top-level JSON value. Raises ValueError on failure."""
+    import re
+
+    stripped = text.strip()
+    if not stripped:
+        raise ValueError("empty model output")
+    try:
+        return json.loads(stripped)
+    except (json.JSONDecodeError, ValueError):
+        pass
+    fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", stripped, re.DOTALL)
+    if fenced:
+        candidate = fenced.group(1).strip()
+        try:
+            return json.loads(candidate)
+        except (json.JSONDecodeError, ValueError):
+            pass
+    for pattern in (r"\{.*\}", r"\[.*\]"):
+        match = re.search(pattern, stripped, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except (json.JSONDecodeError, ValueError):
+                continue
+    raise ValueError(f"could not parse model output as JSON: {stripped[:200]!r}")
+
+
+def _normalize_to_shape(value: Any, shape: str) -> Any:
+    """Coerce model output toward the shape a pipeline stage expects.
+
+    Some OpenAI-compatible providers ignore structured-output schemas and return
+    JSON with the right keys but wrong value types (e.g. a string where a list is
+    expected). This adapts those outputs so the pipeline keeps running.
+    """
+    if shape == "list":
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, list):
+            return value
+        if isinstance(value, dict):
+            return [str(value)]
+        return [str(value)]
+    if shape == "dict":
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            return {"value": value}
+        return {"value": str(value)}
+    if shape == "string":
+        if isinstance(value, str):
+            return value
+        return json.dumps(value, ensure_ascii=False) if value is not None else ""
+    return value
+
+
+def _coerce_need(need: Any) -> dict[str, Any]:
+    """Ensure a parsed need interpretation has the shapes retrieval expects."""
+    if not isinstance(need, dict):
+        need = {"goal": str(need), "interactionType": [], "target": {}, "hardFilters": {"location": None, "interactionTypes": []}, "softPreferences": [], "retrievalQueries": {}, "avoidMatchingOn": []}
+    target = need.get("target")
+    if isinstance(target, str):
+        target = {"knowledge": [target], "experience": [], "interests": []}
+    if not isinstance(target, dict):
+        target = {}
+    for key in ("knowledge", "experience", "interests"):
+        if key not in target or target[key] is None:
+            target[key] = []
+        if isinstance(target[key], str):
+            target[key] = [target[key]]
+    hard = need.get("hardFilters")
+    if isinstance(hard, str):
+        hard = {"location": hard, "interactionTypes": []}
+    if not isinstance(hard, dict):
+        hard = {}
+    hard.setdefault("location", None)
+    if isinstance(hard.get("interactionTypes"), str):
+        hard["interactionTypes"] = [hard["interactionTypes"]]
+    if not isinstance(hard.get("interactionTypes"), list):
+        hard["interactionTypes"] = []
+    queries = need.get("retrievalQueries")
+    if isinstance(queries, str):
+        queries = {"offers": queries, "interests": queries, "needs": queries}
+    if not isinstance(queries, dict):
+        queries = {}
+    for key in ("offers", "interests", "needs"):
+        queries.setdefault(key, "")
+        if not isinstance(queries[key], str):
+            queries[key] = json.dumps(queries[key], ensure_ascii=False) if queries[key] else ""
+    interaction_type = _coerce_interaction_types(need.get("interactionType")) + _coerce_interaction_types(hard.get("interactionTypes"))
+    interaction_type = list(dict.fromkeys(interaction_type))
+    hard["interactionTypes"] = interaction_type
+    return {
+        "goal": _normalize_to_shape(need.get("goal"), "string"),
+        "interactionType": interaction_type,
+        "target": target,
+        "hardFilters": hard,
+        "softPreferences": _normalize_to_shape(need.get("softPreferences"), "list"),
+        "retrievalQueries": queries,
+        "avoidMatchingOn": _normalize_to_shape(need.get("avoidMatchingOn"), "list"),
+    }
+
+
+_INTERACTION_SYNONYMS = {
+    "mentorship": "mentoring", "mentor": "mentoring", "being_mentored": "being_mentored",
+    "collab": "collaboration", "partner": "collaboration",
+    "advice": "advice", "recommendation": "recommendations", "hire": "hiring",
+    "meet": "meeting_people", "friendship": "friendship", "cofound": "cofounding",
+}
+
+
+def _coerce_interaction_types(value: Any) -> list[str]:
+    from .schemas.profile import INTERACTION_TYPES
+    values = _normalize_to_shape(value, "list")
+    cleaned = []
+    for item in values:
+        token = str(item).strip().lower().replace("-", "_").replace(" ", "_")
+        token = _INTERACTION_SYNONYMS.get(token, token)
+        if token in INTERACTION_TYPES:
+            cleaned.append(token)
+    return cleaned
+
+
+def _coerce_matches(judged: Any) -> list[dict[str, Any]]:
+    """Ensure a parsed judge result is a list of {userId, score, reason}."""
+    if isinstance(judged, dict) and isinstance(judged.get("matches"), list):
+        judged = judged["matches"]
+    if not isinstance(judged, list):
+        return []
+    matches = []
+    for item in judged:
+        if not isinstance(item, dict):
+            continue
+        user_id = item.get("userId") or item.get("candidateId") or item.get("candidate_id") or item.get("id")
+        matches.append({
+            "userId": _normalize_to_shape(user_id, "string"),
+            "score": float(item.get("score", item.get("matchScore", 0.0)) or 0.0),
+            "reason": _normalize_to_shape(item.get("reason"), "string"),
+        })
+    return matches
+
+
+def _retryable_stream_error(exc: Exception) -> bool:
+    """Streaming to some OpenAI-compatible providers is rejected even though
+    non-streaming works; fall back to non-streaming for those errors."""
+    name = type(exc).__name__
+    message = str(exc).lower()
+    return name in {"PermissionDeniedError", "BadRequestError", "AuthenticationError", "APIStatusError"} or "blocked" in message or "stream" in message
+
+
+def _is_official_openai(base_url: str) -> bool:
+    """OpenAI's official API supports Structured Outputs; many compatible
+    providers do not, so JSON structure is requested via prompt instead."""
+    host = base_url.replace("https://", "").replace("http://", "").split("/")[0]
+    return host in {"api.openai.com", "openai.com"}
+
+
+def _json_only_instruction(schema: dict[str, Any]) -> str:
+    """Appended instruction for providers that ignore structured outputs."""
+    required = schema.get("required", [])
+    fields = ", ".join(f'"{field}"' for field in required)
+    return ("\n\nRespond with ONLY a single raw JSON object. No markdown, no code fences, no prose. "
+            f"The JSON object must contain exactly these keys: {fields}. "
+            "Ensure every value uses the correct JSON type (arrays for lists, objects for nested structures, numbers for scores).")
+
+
 def _compact(profile: dict[str, Any]) -> dict[str, Any]:
     keys = ("id", "name", "headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo", "projects", "location")
     return {key: profile.get(key, [] if key != "location" else None) for key in keys}
@@ -52,14 +222,43 @@ def _compact(profile: dict[str, Any]) -> dict[str, Any]:
 class Pipeline:
     def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None, *, index: EmbeddingIndex | None = None, base_url: str | None = None) -> None:
         self.store, self.profiles = store, profiles
-        self.client = make_client(api_key=api_key or None, base_url=base_url) if api_key else None
+        cfg = provider_config()
+        self.api_key = api_key or cfg["api_key"] or None
+        self.base_url = (base_url or cfg["base_url"] or "https://api.openai.com/v1").rstrip("/")
+        self.client = make_client(api_key=self.api_key, base_url=self.base_url) if self.api_key else None
         self.index = index
 
+    def _post_responses(self, request: dict[str, Any], timeout: int = 120) -> dict[str, Any]:
+        """POST /responses over plain HTTP. Some OpenAI-compatible providers
+        (behind Cloudflare) block Python SDK / urllib User-Agents but accept a
+        curl-like UA; urllib lets us set that header, the SDK does not."""
+        import urllib.error
+        import urllib.request
+
+        url = self.base_url + "/responses"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "curl/8.5.0",
+        }
+        body = json.dumps(request).encode("utf-8")
+        http_request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        with urllib.request.urlopen(http_request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        if payload.get("error"):
+            raise RuntimeError(payload["error"].get("message", str(payload["error"])))
+        return payload
+
     def _response(self, run_id: str, stage: str, model: str, prompt: str, prompt_version: str, payload: dict[str, Any], schema_name: str, schema: dict[str, Any], reasoning_effort: str, config: PipelineConfig, on_delta: Callable[[str], None] | None = None) -> dict[str, Any]:
-        request: dict[str, Any] = {"model": model, "instructions": prompt, "input": json.dumps(payload), "stream": True, "max_output_tokens": config.max_output_tokens, "text": {"format": {"type": "json_schema", "name": schema_name, "schema": schema, "strict": True}}}
+        request: dict[str, Any] = {"model": model, "instructions": prompt, "input": json.dumps(payload), "stream": True, "max_output_tokens": config.max_output_tokens}
+        if _is_official_openai(self.base_url):
+            request["text"] = {"format": {"type": "json_schema", "name": schema_name, "schema": schema, "strict": True}}
+        else:
+            request["instructions"] = prompt + _json_only_instruction(schema)
         if reasoning_effort != "none":
             request["reasoning"] = {"effort": reasoning_effort}
         started, first_delta, final_response, output, events = time.perf_counter(), None, None, [], []
+        parsed = None
         try:
             if self.client is None:
                 raise RuntimeError("Set OPENAI_API_KEY to run the live pipeline.")
@@ -74,24 +273,44 @@ class Pipeline:
                         on_delta(delta)
                 if getattr(event, "type", "") == "response.completed":
                     final_response = getattr(event, "response", None)
-            parsed = json.loads("".join(output) or getattr(final_response, "output_text", ""))
+            parsed = _parse_json_tolerant("".join(output) or getattr(final_response, "output_text", ""))
         except Exception as exc:
-            trace = make_trace(stage=stage, model=model, reasoning_effort=reasoning_effort, prompt_version=prompt_version, request=request, response=final_response, stream_events=events, ttft_ms=first_delta, latency_ms=round((time.perf_counter() - started) * 1000, 2), error=f"{type(exc).__name__}: {exc}")
-            self.store.add_call(run_id, trace)
-            raise RuntimeError(f"{stage} failed: {exc}") from exc
+            if _retryable_stream_error(exc):
+                # Fallback for providers that reject the SDK's streaming request
+                # (e.g. Cloudflare-blocked Python User-Agent): plain HTTP, non-stream.
+                request["stream"] = False
+                try:
+                    data = self._post_responses(request)
+                    final_response = data
+                    stream_text = ""
+                    for choice in data.get("choices", []):
+                        content = choice.get("message", {}).get("content") or choice.get("text") or ""
+                        stream_text += content or ""
+                    if on_delta:
+                        on_delta(stream_text)
+                    parsed = _parse_json_tolerant(stream_text)
+                except Exception as fallback_exc:
+                    trace = make_trace(stage=stage, model=model, reasoning_effort=reasoning_effort, prompt_version=prompt_version, request=request, response=final_response, stream_events=events, ttft_ms=first_delta, latency_ms=round((time.perf_counter() - started) * 1000, 2), error=f"{type(fallback_exc).__name__}: {fallback_exc}")
+                    self.store.add_call(run_id, trace)
+                    raise RuntimeError(f"{stage} failed: {fallback_exc}") from fallback_exc
+            else:
+                trace = make_trace(stage=stage, model=model, reasoning_effort=reasoning_effort, prompt_version=prompt_version, request=request, response=final_response, stream_events=events, ttft_ms=first_delta, latency_ms=round((time.perf_counter() - started) * 1000, 2), error=f"{type(exc).__name__}: {exc}")
+                self.store.add_call(run_id, trace)
+                raise RuntimeError(f"{stage} failed: {exc}") from exc
         trace = make_trace(stage=stage, model=model, reasoning_effort=reasoning_effort, prompt_version=prompt_version, request=request, response=final_response, stream_events=events, ttft_ms=first_delta, latency_ms=round((time.perf_counter() - started) * 1000, 2))
         self.store.add_call(run_id, trace)
         return parsed
 
     def _retrieve(self, run_id: str, requester: dict[str, Any], need: dict[str, Any], config: PipelineConfig) -> list[dict[str, Any]]:
         embedder = OpenAIEmbedder(self.client, model=getattr(config, "embedding_model", EMBEDDING_MODEL)) if self.client else None
-        rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), index=self.index, embedder=embedder, per_dimension_count=config.retrieval_count, min_prescore=config.min_prescore, weights=config)
+        rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), index=self.index, embedder=embedder, per_dimension_count=config.retrieval_count, min_prescore=getattr(config, "min_prescore", None), weights=config)
         if embedder and embedder.last_trace:
             self.store.add_call(run_id, embedder.last_trace)
         return rows[:config.retrieval_count]
 
     def run_judge_experiment(self, requester_id: str, query: str, need: dict[str, Any], candidates: list[dict[str, Any]], config: PipelineConfig, *, include_requester: bool = True, include_prescore: bool = True, on_delta: Callable[[str], None] | None = None) -> dict[str, Any]:
         requester = next(profile for profile in self.profiles if profile["id"] == requester_id)
+        need = _coerce_need(need)
         candidate_payload = []
         for row in candidates[:config.judge_shortlist]:
             item = _compact(row["candidate"])
@@ -105,12 +324,13 @@ class Pipeline:
         started = time.perf_counter()
         try:
             judged = self._response(run_id, "match_judge", config.judge_model, MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION, payload, "match_results", MATCH_SCHEMA, config.judge_reasoning_effort, config, on_delta)
+            judged_matches = _coerce_matches(judged)
             allowed = {row["candidate"]["id"] for row in candidates[:config.judge_shortlist]}
-            invalid_ids = sorted({item["userId"] for item in judged["matches"]} - allowed)
+            invalid_ids = sorted({item["userId"] for item in judged_matches} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
             visible = []
-            for rank, match in enumerate(judged["matches"], 1):
+            for rank, match in enumerate(judged_matches, 1):
                 hidden = match["score"] < config.min_judge_score
                 self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None if hidden else None}, rank)
                 if not hidden:
@@ -128,21 +348,23 @@ class Pipeline:
         run_id, started, need, retrieved, matches = self.store.new_run(requester, query, asdict(config)), time.perf_counter(), None, [], []
         try:
             need = self._response(run_id, "need_interpreter", config.need_model, NEED_INTERPRETER_PROMPT, NEED_INTERPRETER_VERSION, {"query": query, "requester": _compact(requester)}, "need_interpretation", NEED_SCHEMA, config.need_reasoning_effort, config, lambda d: on_delta and on_delta("need", d))
+            need = _coerce_need(need)
             retrieved = self._retrieve(run_id, requester, need, config)
             self.store.add_retrieval(run_id, retrieved)
             if not retrieved:
                 raise RuntimeError("retrieval returned no compatible candidates")
             judged = self._response(run_id, "match_judge", config.judge_model, MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION, {"query": query, "need": need, "requester": _compact(requester), "candidates": [_compact(row["candidate"]) | {"prescore": row["prescore"]} for row in retrieved[:config.judge_shortlist]]}, "match_results", MATCH_SCHEMA, config.judge_reasoning_effort, config, lambda d: on_delta and on_delta("judge", d))
+            judged_matches = _coerce_matches(judged)
             allowed, profiles = {row["candidate"]["id"] for row in retrieved[:config.judge_shortlist]}, {profile["id"]: profile for profile in self.profiles}
-            invalid_ids = sorted({item["userId"] for item in judged["matches"]} - allowed)
+            invalid_ids = sorted({item["userId"] for item in judged_matches} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
-            for rank, match in enumerate((item for item in judged["matches"] if item["userId"] in allowed and item["score"] >= config.min_judge_score), 1):
+            for rank, match in enumerate((item for item in judged_matches if item["userId"] in allowed and item["score"] >= config.min_judge_score), 1):
                 intro = self._response(run_id, "introduction", config.introduction_model, INTRODUCTION_PROMPT, INTRODUCTION_VERSION, {"query": query, "requester": _compact(requester), "candidate": _compact(profiles[match["userId"]]), "judge_reason": match["reason"]}, "match_introduction", INTRODUCTION_SCHEMA, config.introduction_reasoning_effort, config)
                 result = {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": {"why_this_person": intro["whyThisPerson"], "why_you": intro["whyYou"], "possible_opener": intro["possibleOpener"]}}
                 matches.append(result)
                 self.store.add_match(run_id, result, rank)
-            for rank, match in enumerate((item for item in judged["matches"] if item["userId"] in allowed and item["score"] < config.min_judge_score), len(matches) + 1):
+            for rank, match in enumerate((item for item in judged_matches if item["userId"] in allowed and item["score"] < config.min_judge_score), len(matches) + 1):
                 self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None}, rank)
             status, error = "completed", None
         except Exception as exc:
