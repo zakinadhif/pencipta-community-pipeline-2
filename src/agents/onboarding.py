@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 from openai import OpenAI
 
+from ..config import make_client
 from ..tracing.trace import make_trace
 
 
@@ -176,7 +177,7 @@ class OnboardingInterviewer:
     """Tool-enabled Responses API driver shared by Marimo and programmatic callers."""
 
     def __init__(self, api_key: str | None = None, *, client: Any | None = None) -> None:
-        self.client = client or OpenAI(api_key=api_key)
+        self.client = client or make_client(api_key=api_key) or OpenAI(api_key=api_key)
 
     def next_turn(
         self,

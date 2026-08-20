@@ -7,6 +7,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from ..config import make_client
 from ..schemas.profile import INTERACTION_TYPES, ProfileDraft, ProfileValidationError
 from ..tracing.trace import make_trace
 
@@ -89,7 +90,7 @@ PROFILE_SCHEMA = {"type": "object", "additionalProperties": False, "required": [
 
 class ProfileCompiler:
     def __init__(self, api_key: str) -> None:
-        self.client = OpenAI(api_key=api_key)
+        self.client = make_client(api_key=api_key) or OpenAI(api_key=api_key)
 
     def compile(self, transcript: list[dict[str, str]], *, model: str = "gpt-5.6-luna", reasoning_effort: str = "low") -> tuple[ProfileDraft, dict[str, Any]]:
         draft, raw_response, _ = self.compile_with_trace(

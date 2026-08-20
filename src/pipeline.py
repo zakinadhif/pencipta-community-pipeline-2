@@ -7,12 +7,11 @@ import urllib.request
 from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
-from openai import OpenAI
-
 from .agents.introduction import INTRODUCTION_PROMPT, INTRODUCTION_VERSION
 from .agents.match_judge import MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION
 from .agents.need_interpreter import NEED_INTERPRETER_PROMPT, NEED_INTERPRETER_VERSION
-from .retrieval.embeddings import OpenAIEmbedder
+from .config import DEFAULT_INTRO_MODEL, DEFAULT_JUDGE_MODEL, DEFAULT_NEED_MODEL, make_client
+from .retrieval.embeddings import EMBEDDING_MODEL, OpenAIEmbedder
 from .retrieval.index import EmbeddingIndex
 from .retrieval.search import search_people
 from .tracing.storage import ExperimentStore
@@ -25,9 +24,9 @@ INTRODUCTION_SCHEMA = {"type": "object", "additionalProperties": False, "require
 
 @dataclass
 class PipelineConfig:
-    need_model: str = "gpt-5.6-luna"
-    judge_model: str = "gpt-5.6-terra"
-    introduction_model: str = "gpt-5.6-luna"
+    need_model: str = DEFAULT_NEED_MODEL
+    judge_model: str = DEFAULT_JUDGE_MODEL
+    introduction_model: str = DEFAULT_INTRO_MODEL
     need_reasoning_effort: str = "low"
     judge_reasoning_effort: str = "medium"
     introduction_reasoning_effort: str = "low"
@@ -51,9 +50,9 @@ def _compact(profile: dict[str, Any]) -> dict[str, Any]:
 
 
 class Pipeline:
-    def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None, *, index: EmbeddingIndex | None = None) -> None:
+    def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None, *, index: EmbeddingIndex | None = None, base_url: str | None = None) -> None:
         self.store, self.profiles = store, profiles
-        self.client = OpenAI(api_key=api_key) if api_key else None
+        self.client = make_client(api_key=api_key or None, base_url=base_url) if api_key else None
         self.index = index
 
     def _response(self, run_id: str, stage: str, model: str, prompt: str, prompt_version: str, payload: dict[str, Any], schema_name: str, schema: dict[str, Any], reasoning_effort: str, config: PipelineConfig, on_delta: Callable[[str], None] | None = None) -> dict[str, Any]:
@@ -85,7 +84,7 @@ class Pipeline:
         return parsed
 
     def _retrieve(self, run_id: str, requester: dict[str, Any], need: dict[str, Any], config: PipelineConfig) -> list[dict[str, Any]]:
-        embedder = OpenAIEmbedder(self.client) if self.client else None
+        embedder = OpenAIEmbedder(self.client, model=getattr(config, "embedding_model", EMBEDDING_MODEL)) if self.client else None
         rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), index=self.index, embedder=embedder, per_dimension_count=config.retrieval_count, min_prescore=config.min_prescore, weights=config)
         if embedder and embedder.last_trace:
             self.store.add_call(run_id, embedder.last_trace)

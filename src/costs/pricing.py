@@ -1,9 +1,15 @@
 """Central, updateable model prices in USD per one million tokens.
 
 Last verified against official OpenAI model pages on 2026-08-20.
+
+Custom OpenAI-compatible providers can declare per-model prices via
+`MODEL_PRICE_<NAME>=<input>,<output>` environment variables (cached input
+follows the input price). A model without any known price reports estimated
+cost 0 rather than raising, so custom models never break the pipeline.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 
@@ -21,8 +27,26 @@ MODEL_PRICING = {
 }
 
 
+def _custom_prices() -> dict[str, ModelPricing]:
+    prices: dict[str, ModelPricing] = {}
+    for key, value in os.environ.items():
+        if not key.startswith("MODEL_PRICE_"):
+            continue
+        model = key[len("MODEL_PRICE_"):]
+        parts = [part.strip() for part in value.split(",")]
+        if len(parts) < 2:
+            continue
+        try:
+            input_price, output_price = float(parts[0]), float(parts[1])
+        except ValueError:
+            continue
+        prices[model] = ModelPricing(input_price, input_price, output_price)
+    return prices
+
+
 def pricing_for(model: str) -> ModelPricing:
+    known = {**MODEL_PRICING, **_custom_prices()}
     try:
-        return MODEL_PRICING[model]
-    except KeyError as exc:
-        raise ValueError(f"No centralized pricing configured for model {model!r}.") from exc
+        return known[model]
+    except KeyError:
+        return ModelPricing(0.0, 0.0, 0.0)
