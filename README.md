@@ -13,6 +13,19 @@ Copy-Item .env.example .env
 marimo edit experimental_harness.py
 ```
 
+The work follows the handoffs in `plans/` in order. Begin with the profile
+vertical slice, then move into matching:
+
+```powershell
+marimo edit 01_onboarding.py
+marimo edit 02_profile_compiler.py
+marimo edit experimental_harness.py  # current end-to-end matching laboratory
+```
+
+`01_onboarding.py` and `02_profile_compiler.py` produce inspectable,
+user-editable records and drafts only. They never commit a profile or generate
+embeddings automatically.
+
 Live runs persist every intermediate result in `data/runs.duckdb`. The bundled
 synthetic profiles and evaluation queries can be inspected without an API key;
 executing the model stages requires one.
