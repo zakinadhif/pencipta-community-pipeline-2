@@ -1,10 +1,17 @@
 from src.agents.profile_compiler import PROFILE_SCHEMA
 from src.costs.calculator import estimate_cost
 from src.costs.pricing import pricing_for
-from src.pipeline import INTRODUCTION_SCHEMA, MATCH_SCHEMA, NEED_SCHEMA
+from src.pipeline import PipelineConfig, INTRODUCTION_SCHEMA, MATCH_SCHEMA, NEED_SCHEMA
 from src.schemas.profile import INTERACTION_TYPES
 from src.tracing.trace import make_trace
 from src.evaluation.metrics import aggregate_metrics, ranking_metrics
+
+
+def test_pipeline_config_defaults_keep_legacy_judge_behavior():
+    config = PipelineConfig()
+    assert config.min_judge_score == 0.0
+    assert config.retrieval_count == 30
+    assert config.judge_shortlist == 12
 
 
 def strict_schema_errors(schema, path="$"):

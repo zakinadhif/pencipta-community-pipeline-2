@@ -13,7 +13,7 @@ from .agents.introduction import INTRODUCTION_PROMPT, INTRODUCTION_VERSION
 from .agents.match_judge import MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION
 from .agents.need_interpreter import NEED_INTERPRETER_PROMPT, NEED_INTERPRETER_VERSION
 from .retrieval.embeddings import OpenAIEmbedder
-from .retrieval.prescore import weighted_prescore
+from .retrieval.index import EmbeddingIndex
 from .retrieval.search import search_people
 from .tracing.storage import ExperimentStore
 from .tracing.trace import make_trace
@@ -38,6 +38,7 @@ class PipelineConfig:
     reciprocity_weight: float = 0.20
     interaction_weight: float = 0.15
     max_output_tokens: int = 1600
+    min_judge_score: float = 0.0
 
 
 def _dump(value: Any) -> Any:
@@ -50,9 +51,10 @@ def _compact(profile: dict[str, Any]) -> dict[str, Any]:
 
 
 class Pipeline:
-    def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None) -> None:
+    def __init__(self, store: ExperimentStore, profiles: list[dict[str, Any]], api_key: str | None, *, index: EmbeddingIndex | None = None) -> None:
         self.store, self.profiles = store, profiles
         self.client = OpenAI(api_key=api_key) if api_key else None
+        self.index = index
 
     def _response(self, run_id: str, stage: str, model: str, prompt: str, prompt_version: str, payload: dict[str, Any], schema_name: str, schema: dict[str, Any], reasoning_effort: str, config: PipelineConfig, on_delta: Callable[[str], None] | None = None) -> dict[str, Any]:
         request: dict[str, Any] = {"model": model, "instructions": prompt, "input": json.dumps(payload), "stream": True, "max_output_tokens": config.max_output_tokens, "text": {"format": {"type": "json_schema", "name": schema_name, "schema": schema, "strict": True}}}
@@ -84,13 +86,7 @@ class Pipeline:
 
     def _retrieve(self, run_id: str, requester: dict[str, Any], need: dict[str, Any], config: PipelineConfig) -> list[dict[str, Any]]:
         embedder = OpenAIEmbedder(self.client) if self.client else None
-        rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), embedder=embedder)
-        for row in rows:
-            row["interaction_score"] = float(bool(set(need["interactionType"]) & set(row["candidate"].get("openTo", []))))
-            row["prescore"] = weighted_prescore(row["offers_similarity"], row["interests_similarity"], row["reciprocal_similarity"], row["interaction_score"], config)
-        rows.sort(key=lambda row: row["prescore"], reverse=True)
-        for rank, row in enumerate(rows[:config.retrieval_count], 1):
-            row["rank"] = rank
+        rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), index=self.index, embedder=embedder, per_dimension_count=config.retrieval_count, min_prescore=config.min_prescore, weights=config)
         if embedder and embedder.last_trace:
             self.store.add_call(run_id, embedder.last_trace)
         return rows[:config.retrieval_count]
@@ -114,15 +110,19 @@ class Pipeline:
             invalid_ids = sorted({item["userId"] for item in judged["matches"]} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
+            visible = []
             for rank, match in enumerate(judged["matches"], 1):
-                self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None}, rank)
+                hidden = match["score"] < config.min_judge_score
+                self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None if hidden else None}, rank)
+                if not hidden:
+                    visible.append(match)
             status, error = "completed", None
         except Exception as exc:
             judged, status, error = {"matches": []}, "failed", str(exc)
         latency = round((time.perf_counter() - started) * 1000, 2)
         cost = float(self.store.dataframe("select coalesce(sum(estimated_cost_usd), 0) as cost from llm_calls where run_id = ?", [run_id]).iloc[0]["cost"])
         self.store.finish_run(run_id, need=need, status=status, error=error, latency_ms=latency, estimated_cost=cost)
-        return {"run_id": run_id, "status": status, "error": error, "input": payload, "matches": judged["matches"], "latency_ms": latency, "estimated_cost_usd": cost}
+        return {"run_id": run_id, "status": status, "error": error, "input": payload, "matches": visible, "latency_ms": latency, "estimated_cost_usd": cost}
 
     def run(self, requester_id: str, query: str, config: PipelineConfig, on_delta: Callable[[str, str], None] | None = None) -> dict[str, Any]:
         requester = next(profile for profile in self.profiles if profile["id"] == requester_id)
@@ -138,11 +138,13 @@ class Pipeline:
             invalid_ids = sorted({item["userId"] for item in judged["matches"]} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
-            for rank, match in enumerate((item for item in judged["matches"] if item["userId"] in allowed), 1):
+            for rank, match in enumerate((item for item in judged["matches"] if item["userId"] in allowed and item["score"] >= config.min_judge_score), 1):
                 intro = self._response(run_id, "introduction", config.introduction_model, INTRODUCTION_PROMPT, INTRODUCTION_VERSION, {"query": query, "requester": _compact(requester), "candidate": _compact(profiles[match["userId"]]), "judge_reason": match["reason"]}, "match_introduction", INTRODUCTION_SCHEMA, config.introduction_reasoning_effort, config)
                 result = {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": {"why_this_person": intro["whyThisPerson"], "why_you": intro["whyYou"], "possible_opener": intro["possibleOpener"]}}
                 matches.append(result)
                 self.store.add_match(run_id, result, rank)
+            for rank, match in enumerate((item for item in judged["matches"] if item["userId"] in allowed and item["score"] < config.min_judge_score), len(matches) + 1):
+                self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None}, rank)
             status, error = "completed", None
         except Exception as exc:
             status, error = "failed", str(exc)
