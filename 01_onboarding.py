@@ -7,16 +7,16 @@ app = marimo.App(width="full", app_title="Onboarding Interviewer Laboratory")
 
 @app.cell
 def _():
-    import json
     import os
+    from pathlib import Path
 
     import marimo as mo
     from dotenv import load_dotenv
 
-    from src.harness.onboarding import OnboardingInterviewer, OnboardingSession, Turn
+    from src.harness.onboarding import ONBOARDING_PROMPT
 
-    load_dotenv()
-    return OnboardingInterviewer, OnboardingSession, Turn, json, mo, os
+    load_dotenv(Path(__file__).parent / ".env")
+    return ONBOARDING_PROMPT, mo, os
 
 
 @app.cell
@@ -26,47 +26,40 @@ def _(mo):
 
     This laboratory records a short conversation before any profile is generated.
     The interviewer asks one question at a time; it never writes a profile or commits user data.
-    Keep the transcript editable so every model turn is inspectable.
+    The transcript below is the source record for the profile compiler.
     """)
     return
 
 
 @app.cell
-def _(mo):
-    model = mo.ui.text(label="Model", value="gpt-5.6-terra")
-    reasoning = mo.ui.dropdown(label="Reasoning", options=["none", "low", "medium", "high"], value="low")
-    api_key = mo.ui.text(label="OpenAI API key (or OPENAI_API_KEY)", kind="password", full_width=True)
-    transcript = mo.ui.text_area(
-        label="Transcript JSON", full_width=True, rows=14,
-        value='[{"role":"user","content":"I am a student learning web development and I enjoy helping friends with basic HTML and CSS."}]',
+def _(ONBOARDING_PROMPT, mo, os):
+    api_key = os.getenv("OPENAI_API_KEY")
+    mo.stop(not api_key, mo.callout("`OPENAI_API_KEY` is missing. Add it to the repository `.env`, then restart this notebook.", kind="warn"))
+    chat = mo.ui.chat(
+        mo.ai.llm.openai(
+            "gpt-5.6-terra",
+            api_key=api_key,
+            system_message=ONBOARDING_PROMPT,
+        ),
+        prompts=["Start my onboarding"],
+        # This model accepts only its default temperature (1); Marimo's chat
+        # component otherwise supplies 0.5 by default.
+        config={"max_tokens": 300, "temperature": 1},
+        max_height=600,
     )
-    ask = mo.ui.run_button(label="Ask next onboarding question", kind="success")
-    mo.vstack([mo.hstack([model, reasoning]), api_key, transcript, ask])
-    return api_key, ask, model, reasoning, transcript
+    chat
+    return (chat,)
 
 
 @app.cell
-def _(OnboardingInterviewer, OnboardingSession, Turn, api_key, ask, json, mo, model, os, reasoning, transcript):
-    mo.stop(not ask.value)
-    secret = api_key.value.strip() or os.getenv("OPENAI_API_KEY")
-    mo.stop(not secret, mo.callout("Set OPENAI_API_KEY or enter a key to ask a live onboarding question.", kind="warn"))
-    try:
-        turns = json.loads(transcript.value)
-        if not isinstance(turns, list) or any(turn.get("role") not in {"user", "assistant"} or not isinstance(turn.get("content"), str) for turn in turns):
-            raise ValueError("each turn needs a user/assistant role and string content")
-        session = OnboardingSession([Turn(turn["role"], turn["content"]) for turn in turns])
-        result = OnboardingInterviewer(secret).next_turn(session, model=model.value.strip(), reasoning_effort=reasoning.value)
-        updated_transcript = session.transcript()
-        view = mo.vstack([
-            mo.callout("Append the returned assistant turn to the editable transcript, then add the person's next answer. Marked finished means it is ready for the compiler.", kind="success" if result["finished"] else "info"),
-            mo.md(f"## Interviewer\n\n{result['message']}\n\n## Updated transcript"),
-            mo.code_editor(json.dumps(updated_transcript, indent=2), language="json", disabled=True),
-            mo.accordion({"Raw response": mo.json_output(result["response"])}),
-        ])
-    except Exception as exc:
-        view = mo.callout(f"Onboarding turn failed: `{type(exc).__name__}: {exc}`", kind="danger")
-    view
-    return
+def _(chat, mo):
+    transcript = [
+        {"role": message.role, "content": message.content}
+        for message in chat.value
+        if message.role in {"user", "assistant"} and isinstance(message.content, str)
+    ]
+    mo.accordion({"Transcript for profile compilation": mo.json_output(transcript)})
+    return (transcript,)
 
 
 if __name__ == "__main__":
