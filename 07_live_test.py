@@ -23,7 +23,18 @@ def _():
     profiles = json.loads((workspace / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
     eval_queries = json.loads((workspace / "data" / "eval_queries.json").read_text(encoding="utf-8"))
     store = ExperimentStore(workspace / "data" / "runs.duckdb")
-    return eval_queries, json, mo, os, profiles, store, time, per_requester_tokens, per_run_tokens, Pipeline, PipelineConfig, Path
+    return (
+        Pipeline,
+        PipelineConfig,
+        eval_queries,
+        mo,
+        os,
+        per_requester_tokens,
+        per_run_tokens,
+        profiles,
+        store,
+        time,
+    )
 
 
 @app.cell
@@ -44,7 +55,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, PipelineConfig):
+def _(mo):
     judge_reasoning = mo.ui.dropdown(label="Judge reasoning", options=["none", "low", "medium"], value="low")
     retrieval_count = mo.ui.number(label="Retrieval count", start=5, stop=50, value=15)
     judge_shortlist = mo.ui.number(label="Judge shortlist", start=3, stop=20, value=6)
@@ -54,11 +65,31 @@ def _(mo, PipelineConfig):
         mo.hstack([judge_reasoning, retrieval_count, judge_shortlist, max_output], justify="start"),
         run_all,
     ])
-    return judge_reasoning, max_output, retrieval_count, judge_shortlist, run_all
+    return (
+        judge_reasoning,
+        judge_shortlist,
+        max_output,
+        retrieval_count,
+        run_all,
+    )
 
 
 @app.cell
-def _(Pipeline, PipelineConfig, eval_queries, json, mo, os, profiles, retrieval_count, judge_reasoning, judge_shortlist, max_output, run_all, store):
+def _(
+    Pipeline,
+    PipelineConfig,
+    eval_queries,
+    judge_reasoning,
+    judge_shortlist,
+    max_output,
+    mo,
+    os,
+    profiles,
+    retrieval_count,
+    run_all,
+    store,
+    time,
+):
     live_trigger = run_all.value or os.getenv("LIVE_TEST") == "1"
     mo.stop(not live_trigger)
     config = PipelineConfig(judge_reasoning_effort=judge_reasoning.value, retrieval_count=int(retrieval_count.value), judge_shortlist=int(judge_shortlist.value), max_output_tokens=int(max_output.value))
@@ -116,6 +147,14 @@ def _(mo, per_requester_tokens, per_run_tokens, store):
         mo.ui.table(per_run_tokens(store), selection=None),
         mo.ui.table(per_requester_tokens(store), selection=None),
     ], justify="start")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+ 
+    """)
     return
 
 
