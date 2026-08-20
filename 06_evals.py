@@ -14,7 +14,10 @@ def _():
     root = Path(__file__).parent
     queries = json.loads((root / "data" / "eval_queries.json").read_text(encoding="utf-8"))
     store = ExperimentStore(root / "data" / "runs.duckdb")
-    return aggregate_metrics, mo, queries, ranking_metrics, store
+    def json_view(value):
+        return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
+
+    return aggregate_metrics, json_view, mo, queries, ranking_metrics, store
 
 
 @app.cell
@@ -32,7 +35,7 @@ def _(mo, queries):
 
 
 @app.cell
-def _(aggregate_metrics, mo, queries, ranking_metrics, refresh, store):
+def _(aggregate_metrics, json_view, mo, queries, ranking_metrics, refresh, store):
     mo.stop(not refresh.value)
     _runs_df = store.dataframe("select id, query, config_json, status, error, total_latency_ms, estimated_cost_usd, created_at from runs order by created_at desc")
     _evals_df = store.dataframe("select run_id, candidate_id, rating, notes, created_at from human_evaluations order by created_at desc")
@@ -51,7 +54,7 @@ def _(aggregate_metrics, mo, queries, ranking_metrics, refresh, store):
         _retrieved = set(_retrieval_df.loc[_retrieval_df["run_id"] == _run["id"], "candidate_id"].tolist())
         _recall_rows.append({"run_id": _run["id"], "query": _run["query"], "known_good_count": len(_expected), "retrieved_known_good": len(_expected & _retrieved), "retrieval_recall_proxy": len(_expected & _retrieved) / len(_expected) if _expected else None})
     mo.vstack([
-        mo.md("## Aggregate run metrics"), mo.json_output(summary),
+        mo.md("## Aggregate run metrics"), json_view(summary),
         mo.md("## Good@K and AnyGood@K from saved human ratings"), mo.ui.table(_rating_rows, selection=None),
         mo.md("## Known-good retrieval recall proxy"), mo.ui.table(_recall_rows, selection=None),
         mo.md("## Run comparison"), mo.ui.table(_runs, selection=None),

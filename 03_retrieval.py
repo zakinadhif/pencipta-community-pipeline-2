@@ -26,7 +26,10 @@ def _():
     load_dotenv(workspace / ".env")
     profiles = json.loads((workspace / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
     store = ExperimentStore(workspace / "data" / "runs.duckdb")
-    return OpenAI, OpenAIEmbedder, PipelineConfig, json, mo, os, profiles, search_people, store, weighted_prescore
+    def json_view(value):
+        return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
+
+    return OpenAI, OpenAIEmbedder, PipelineConfig, json, json_view, mo, os, profiles, search_people, store, weighted_prescore
 
 
 @app.cell
@@ -85,14 +88,14 @@ def _(OpenAI, OpenAIEmbedder, PipelineConfig, api_key, count, interaction, inter
 
 
 @app.cell
-def _(mo, retrieval_result):
+def _(json_view, mo, retrieval_result):
     selected_need = retrieval_result["need"]
     mo.vstack([
         mo.md("## Interpreted need and directional queries"),
-        mo.json_output(selected_need),
+        json_view(selected_need),
         mo.ui.table([{"rank": row["rank"], "person": row["candidate"]["name"], "offers": round(row["offers_similarity"], 3), "interests": round(row["interests_similarity"], 3), "reciprocal": round(row["reciprocal_similarity"], 3), "interaction": row["interaction_score"], "prescore": round(row["prescore"], 3)} for row in retrieval_result["rows"]], selection=None),
-        mo.accordion({f"#{row['rank']} {row['candidate']['name']}": mo.json_output({key: row["candidate"].get(key) for key in ("headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo")}) for row in retrieval_result["rows"]}),
-        mo.accordion({"Embedding trace": mo.json_output(retrieval_result["embedding_trace"] or {"mode": "lexical baseline"})}),
+        mo.accordion({f"#{row['rank']} {row['candidate']['name']}": json_view({key: row["candidate"].get(key) for key in ("headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo")}) for row in retrieval_result["rows"]}),
+        mo.accordion({"Embedding trace": json_view(retrieval_result["embedding_trace"] or {"mode": "lexical baseline"})}),
     ])
     return
 

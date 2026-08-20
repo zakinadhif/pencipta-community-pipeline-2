@@ -7,6 +7,7 @@ app = marimo.App(width="full", app_title="Onboarding Interviewer Laboratory")
 
 @app.cell
 def _():
+    import json
     import os
     import uuid
     from pathlib import Path
@@ -20,7 +21,10 @@ def _():
     workspace = Path(__file__).parent
     load_dotenv(workspace / ".env")
     store = ExperimentStore(workspace / "data" / "runs.duckdb")
-    return ExperimentStore, OnboardingInterviewer, OnboardingSession, mo, os, store, uuid
+    def json_view(value):
+        return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
+
+    return ExperimentStore, OnboardingInterviewer, OnboardingSession, json_view, mo, os, store, uuid
 
 
 @app.cell
@@ -106,7 +110,7 @@ def _(OnboardingInterviewer, OnboardingSession, max_output, max_turns, mo, model
 
 
 @app.cell
-def _(get_finished, get_tool_events, get_traces, mo):
+def _(get_finished, get_tool_events, get_traces, json_view, mo):
     events = get_tool_events()
     traces = get_traces()
     status = (
@@ -119,8 +123,8 @@ def _(get_finished, get_tool_events, get_traces, mo):
             status,
             mo.accordion(
                 {
-                    f"Agent tools used on the latest turn ({len(events)})": mo.json_output(events),
-                    f"Raw model-call traces ({len(traces)})": mo.json_output(traces),
+                    f"Agent tools used on the latest turn ({len(events)})": json_view(events),
+                    f"Raw model-call traces ({len(traces)})": json_view(traces),
                 }
             ),
             mo.ui.table(
@@ -145,13 +149,13 @@ def _(get_finished, get_tool_events, get_traces, mo):
 
 
 @app.cell
-def _(chat, mo):
+def _(chat, json_view, mo):
     transcript = [
         {"role": message.role, "content": message.content}
         for message in chat.value
         if message.role in {"user", "assistant"} and isinstance(message.content, str)
     ]
-    mo.accordion({"Transcript for profile compilation": mo.json_output(transcript)})
+    mo.accordion({"Transcript for profile compilation": json_view(transcript)})
     return (transcript,)
 
 

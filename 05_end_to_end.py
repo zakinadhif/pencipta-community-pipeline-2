@@ -17,7 +17,10 @@ def _():
     from src.pipeline import Pipeline, PipelineConfig, sync_authoritative_costs
     from src.tracing.storage import ExperimentStore
 
-    return ExperimentStore, Path, Pipeline, PipelineConfig, json, load_dotenv, mo, os, sync_authoritative_costs
+    def json_view(value):
+        return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
+
+    return ExperimentStore, Path, Pipeline, PipelineConfig, json, json_view, load_dotenv, mo, os, sync_authoritative_costs
 
 
 @app.cell
@@ -152,7 +155,7 @@ def _(api_key, interaction_weight, interests_weight, intro_model,
 
 
 @app.cell
-def _(mo, result):
+def _(json_view, mo, result):
     mo.stop(not result)
     if result["status"] != "completed":
         mo.callout(f"Run `{result['run_id']}` failed and its partial trace is retained: `{result['error']}`", kind="danger")
@@ -161,17 +164,17 @@ def _(mo, result):
     mo.md("## Streamed model text (captured verbatim)")
     mo.accordion({"Need interpreter stream": mo.md(f"```text\n{result['streamed_text']['need']}\n```"), "Judge stream": mo.md(f"```text\n{result['streamed_text']['judge']}\n```")})
     mo.md("## Exact experiment input")
-    mo.json_output(result["exact_input"])
+    json_view(result["exact_input"])
     mo.md("## Stored stage traces and aggregate metrics")
     mo.ui.table(result["traces"], selection=None)
     return
 
 
 @app.cell
-def _(mo, result):
+def _(json_view, mo, result):
     mo.stop(not result or not result["need"])
     mo.md("## 1. Need interpretation")
-    mo.json_output(result["need"])
+    json_view(result["need"])
     mo.md("## 2. Retrieval and deterministic prescoring")
     rows = [{"rank": row["rank"], "candidate": row["candidate"]["name"], "offers": round(row["offers_similarity"], 3), "interests": round(row["interests_similarity"], 3), "reciprocal": round(row["reciprocal_similarity"], 3), "interaction": row["interaction_score"], "prescore": round(row["prescore"], 3)} for row in result["retrieval"]]
     mo.ui.table(rows, selection=None)

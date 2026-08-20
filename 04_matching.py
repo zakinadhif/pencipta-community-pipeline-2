@@ -23,7 +23,10 @@ def _():
     load_dotenv(workspace / ".env")
     profiles = json.loads((workspace / "data" / "synthetic_profiles.json").read_text(encoding="utf-8"))
     store = ExperimentStore(workspace / "data" / "runs.duckdb")
-    return ExperimentStore, Pipeline, PipelineConfig, json, mo, os, profiles, search_people, store, weighted_prescore
+    def json_view(value):
+        return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
+
+    return ExperimentStore, Pipeline, PipelineConfig, json, json_view, mo, os, profiles, search_people, store, weighted_prescore
 
 
 @app.cell
@@ -76,12 +79,12 @@ def _(Pipeline, PipelineConfig, api_key, count, include_prescore, include_reques
 
 
 @app.cell
-def _(mo, result):
+def _(json_view, mo, result):
     traces = []
     mo.stop(result["status"] != "completed", mo.callout(f"Judge failed: `{result['error']}`", kind="danger"))
     prescores = {row["candidate"]["id"]: row["prescore"] for row in result["candidate_rows"]}
     mo.vstack([
-        mo.md("## Exact judge input"), mo.json_output(result["input"]),
+        mo.md("## Exact judge input"), json_view(result["input"]),
         mo.md("## Raw stream"), mo.md(f"```json\n{result['streamed_text']}\n```"),
         mo.md("## Structured matches"),
         mo.ui.table([{"rank": rank, "candidate": match["userId"], "judge_score": match["score"], "prescore": round(prescores.get(match["userId"], 0), 3), "reason": match["reason"]} for rank, match in enumerate(result["matches"], 1)], selection=None),
