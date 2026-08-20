@@ -74,7 +74,7 @@ def _(ProfileCompiler, api_key, compile_profile, existing_profile, json, json_vi
         compilation_view = mo.vstack([
             mo.callout("Profile draft compiled successfully.", kind="success"),
             mo.md("## Source conversation"),
-            mo.code_editor(json.dumps(compiled["source"], indent=2), language="json", disabled=True),
+            mo.ui.code_editor(json.dumps(compiled["source"], indent=2), language="json", disabled=True),
             mo.md("## Parsed profile — directly editable before acceptance"),
             draft_editor,
             accept,

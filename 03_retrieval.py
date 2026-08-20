@@ -46,7 +46,7 @@ def _(mo, profiles):
 @app.cell
 def _(json, mo, profiles):
     options = {f"{profile['name']} — {profile['headline']}": profile["id"] for profile in profiles}
-    requester = mo.ui.dropdown(label="Requester", options=options, value=next(iter(options.values())))
+    requester = mo.ui.dropdown(label="Requester", options=options, value=next(iter(options)))
     query = mo.ui.text_area(label="Original query", value="I need a senior developer who enjoys teaching beginners.", full_width=True)
     need_json = mo.ui.text_area(label="Need Interpreter output", rows=14, full_width=True, value=json.dumps({"goal": "learn software development from an experienced mentor", "interactionType": ["being_mentored"], "target": {"knowledge": ["software development"], "experience": ["senior developer"], "interests": ["teaching beginners"]}, "hardFilters": {"location": None, "interactionTypes": []}, "softPreferences": [], "retrievalQueries": {"offers": "senior software developer who teaches beginners", "interests": "software education and mentoring beginners", "needs": "beginner offering enthusiasm and consistent practice"}, "avoidMatchingOn": ["other beginners seeking mentors"]}, indent=2))
     api_key = mo.ui.text(label="OpenAI API key (optional; otherwise lexical)", kind="password", full_width=True)

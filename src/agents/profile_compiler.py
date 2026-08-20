@@ -7,7 +7,7 @@ from typing import Any
 
 from openai import OpenAI
 
-from ..schemas.profile import ProfileDraft, ProfileValidationError
+from ..schemas.profile import INTERACTION_TYPES, ProfileDraft, ProfileValidationError
 from ..tracing.trace import make_trace
 
 
@@ -72,9 +72,19 @@ Good:
 "previously ran a student marketplace"
 
 Generate a short human-readable profile and structured fields.
+
+For `openTo`, use only these interaction types:
+advice, being_hired, being_mentored, cofounding, collaboration, friendship,
+hiring, meeting_people, mentoring, recommendations.
+
+`openTo` describes the broad social interaction, not the activity or topic.
+Put activities and preferences such as photo walks, drawing together, quiet
+time outdoors, or discussing nature in `interests` and `lookingFor`. For
+example, someone seeking a peer for photo walks may be open to `friendship`,
+`meeting_people`, and/or `collaboration`; never put "photo walks" in `openTo`.
 """
 
-PROFILE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo", "projects", "location"], "properties": {"headline": {"type": "string"}, "summary": {"type": "string"}, "knowledge": {"type": "array", "items": {"type": "string"}}, "experience": {"type": "array", "items": {"type": "string"}}, "interests": {"type": "array", "items": {"type": "string"}}, "canHelpWith": {"type": "array", "items": {"type": "string"}}, "lookingFor": {"type": "array", "items": {"type": "string"}}, "openTo": {"type": "array", "items": {"type": "string"}}, "projects": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["name", "description", "status"], "properties": {"name": {"type": ["string", "null"]}, "description": {"type": "string"}, "status": {"type": ["string", "null"]}}}}, "location": {"type": ["string", "null"]}}}
+PROFILE_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["headline", "summary", "knowledge", "experience", "interests", "canHelpWith", "lookingFor", "openTo", "projects", "location"], "properties": {"headline": {"type": "string"}, "summary": {"type": "string"}, "knowledge": {"type": "array", "items": {"type": "string"}}, "experience": {"type": "array", "items": {"type": "string"}}, "interests": {"type": "array", "items": {"type": "string"}}, "canHelpWith": {"type": "array", "items": {"type": "string"}}, "lookingFor": {"type": "array", "items": {"type": "string"}}, "openTo": {"type": "array", "items": {"type": "string", "enum": sorted(INTERACTION_TYPES)}}, "projects": {"type": "array", "items": {"type": "object", "additionalProperties": False, "required": ["name", "description", "status"], "properties": {"name": {"type": ["string", "null"]}, "description": {"type": "string"}, "status": {"type": ["string", "null"]}}}}, "location": {"type": ["string", "null"]}}}
 
 
 class ProfileCompiler:

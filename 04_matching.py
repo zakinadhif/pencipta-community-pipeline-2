@@ -42,7 +42,7 @@ def _(mo):
 @app.cell
 def _(json, mo, profiles):
     options = {f"{profile['name']} — {profile['headline']}": profile["id"] for profile in profiles}
-    requester = mo.ui.dropdown(label="Requester", options=options, value=next(iter(options.values())))
+    requester = mo.ui.dropdown(label="Requester", options=options, value=next(iter(options)))
     query = mo.ui.text_area(label="Request", value="I need someone experienced in campus distribution who can advise me.", full_width=True)
     need = mo.ui.text_area(label="Interpreted need JSON", rows=12, full_width=True, value=json.dumps({"goal": "learn campus distribution", "interactionType": ["advice"], "target": {"knowledge": ["campus distribution"], "experience": ["launching a student product"], "interests": ["student entrepreneurship"]}, "hardFilters": {"location": None, "interactionTypes": []}, "softPreferences": [], "retrievalQueries": {"offers": "campus distribution and student product launch", "interests": "student entrepreneurship", "needs": "product feedback"}, "avoidMatchingOn": []}, indent=2))
     model = mo.ui.text(label="Judge model", value="gpt-5.6-terra")

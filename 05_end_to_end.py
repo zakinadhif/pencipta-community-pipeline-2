@@ -53,7 +53,7 @@ def _(ExperimentStore, Path, json, load_dotenv):
 @app.cell
 def _(mo, profiles):
     profile_options = {f"{profile['name']} — {profile['headline']}": profile["id"] for profile in profiles}
-    requester = mo.ui.dropdown(label="Requester", options=profile_options, value=next(iter(profile_options.values())))
+    requester = mo.ui.dropdown(label="Requester", options=profile_options, value=next(iter(profile_options)))
     query = mo.ui.text_area(
         label="Natural-language need",
         value="I want someone who has deployed an AT Protocol PDS themselves and can help me understand the setup.",

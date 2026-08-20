@@ -2,6 +2,7 @@ from src.agents.profile_compiler import PROFILE_SCHEMA
 from src.costs.calculator import estimate_cost
 from src.costs.pricing import pricing_for
 from src.pipeline import INTRODUCTION_SCHEMA, MATCH_SCHEMA, NEED_SCHEMA
+from src.schemas.profile import INTERACTION_TYPES
 from src.tracing.trace import make_trace
 from src.evaluation.metrics import aggregate_metrics, ranking_metrics
 
@@ -26,6 +27,11 @@ def strict_schema_errors(schema, path="$"):
 def test_all_structured_output_schemas_are_strict_compatible():
     for schema in (PROFILE_SCHEMA, NEED_SCHEMA, MATCH_SCHEMA, INTRODUCTION_SCHEMA):
         assert strict_schema_errors(schema) == []
+
+
+def test_profile_schema_restricts_open_to_to_supported_interactions():
+    open_to_items = PROFILE_SCHEMA["properties"]["openTo"]["items"]
+    assert set(open_to_items["enum"]) == INTERACTION_TYPES
 
 
 def test_centralized_pricing_and_trace_cost():
