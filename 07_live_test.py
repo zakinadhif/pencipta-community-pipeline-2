@@ -87,9 +87,9 @@ def _(mo, profiles):
 
 @app.cell
 def _(mo):
-    run_single = mo.ui.run_button(label="▶ Run query kustom ini", kind="success")
-    run_all = mo.ui.run_button(label="Run all eval queries", kind="secondary")
-    mo.vstack([run_single, run_all])
+    run_single = mo.ui.run_button(label="▶ Run query kustom ini")
+    run_all = mo.ui.run_button(label="Run all eval queries")
+    mo.hstack([run_single, run_all])
     return run_all, run_single
 
 
