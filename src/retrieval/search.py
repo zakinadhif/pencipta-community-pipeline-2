@@ -15,12 +15,34 @@ class _DefaultWeights:
     interaction_weight = 0.15
 
 
+COMPATIBLE_INTERACTIONS: dict[str, list[str]] = {
+    "friendship": ["friendship", "meeting_people", "collaboration", "advice"],
+    "meeting_people": ["meeting_people", "collaboration", "advice", "friendship"],
+    "being_mentored": ["mentoring", "advice", "collaboration", "being_mentored"],
+    "mentoring": ["being_mentored", "mentoring", "advice", "collaboration"],
+    "collaboration": ["collaboration", "advice", "meeting_people", "friendship"],
+    "advice": ["advice", "collaboration", "mentoring", "meeting_people"],
+    "recommendations": ["recommendations", "advice", "collaboration"],
+    "cofounding": ["cofounding", "collaboration"],
+    "hiring": ["hiring", "being_hired", "collaboration", "advice"],
+    "being_hired": ["being_hired", "hiring", "collaboration", "advice"],
+}
+
+
 def _matches_hard_filters(candidate: dict[str, Any], filters: dict[str, Any], interaction_types: list[str]) -> bool:
     location = filters.get("location")
     if location and candidate.get("location", "").casefold() != str(location).casefold():
         return False
     required = filters.get("interactionTypes") or interaction_types
-    return not required or bool(set(required) & set(candidate.get("openTo", [])))
+    if not required:
+        return True
+    candidate_open = set(candidate.get("openTo", []))
+    expanded = set()
+    for req in required:
+        expanded.add(req)
+        for comp in COMPATIBLE_INTERACTIONS.get(req, []):
+            expanded.add(comp)
+    return bool(expanded & candidate_open)
 
 
 def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], queries: dict[str, str], filters: dict[str, Any], interaction_types: list[str], limit: int, index: EmbeddingIndex | None = None, embedder: Embedder | None = None, per_dimension_count: int = 50, min_prescore: float | None = None, weights: Any = None) -> list[dict[str, Any]]:
@@ -35,6 +57,11 @@ def search_people(*, profiles: list[dict[str, Any]], requester: dict[str, Any], 
     if weights is None:
         weights = _DefaultWeights()
     candidates = [profile for profile in profiles if profile["id"] != requester["id"] and _matches_hard_filters(profile, filters, interaction_types)]
+    if not candidates and filters.get("location"):
+        # Relax interaction type filter if too restrictive, preserving location filter
+        candidates = [profile for profile in profiles if profile["id"] != requester["id"] and profile.get("location", "").casefold() == str(filters["location"]).casefold()]
+    elif not candidates:
+        candidates = [profile for profile in profiles if profile["id"] != requester["id"]]
     requester_vectors = profile_vectors(requester)
     reciprocal_query_text = queries.get("needs", "").strip() or requester_vectors.offers
     query_texts = [queries.get("offers", ""), queries.get("interests", ""), reciprocal_query_text]
