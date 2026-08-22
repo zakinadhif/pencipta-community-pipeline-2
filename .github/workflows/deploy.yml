@@ -30,10 +30,20 @@ jobs:
   deploy:
     name: Deploy ke high-server
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || secrets.SSH_DEPLOY_KEY != '' }}
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Guard (skip push tanpa secret)
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && -z "${SSH_PASSWORD:-}" && -z "${DEPLOY_KEY:-}" ]]; then
+            echo "::notice::Push tanpa SSH secret — skip deploy. Set SSH_PASSWORD atau SSH_DEPLOY_KEY untuk auto-deploy."
+            exit 0
+          fi
 
       - name: Setup SSH auth (deploy key) atau pakai password
         id: ssh_auth
