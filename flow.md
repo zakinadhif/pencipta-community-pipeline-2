@@ -4,20 +4,164 @@ Dokumen ini menjelaskan **cara kerja**, **algoritma**, dan **komponen** dari pip
 pencocokan antar-manusia di komunitas ini, lengkap dengan potongan kode sumber dan
 lokasi file di mana masing-masing diterapkan.
 
-Arsitektur mengikuti prinsip **funnel bertahap**: semakin mahal suatu tahap, semakin
-sedikit orang yang diproses.
+Arsitektur memiliki dua alur yang terpisah: **pembentukan profil** dan **pencocokan**.
+Profil dibentuk dari percakapan, ditinjau oleh pengguna, lalu baru dapat dipersistenkan
+dan di-embed melalui aksi eksplisit. Pipeline pencocokan mengikuti prinsip **funnel
+bertahap**: semakin mahal suatu tahap, semakin sedikit orang yang diproses.
 
 ```
+percakapan ──▶ onboarding transcript ──▶ profile compiler ──▶ edit/validasi ──▶ persist + embed
+                                                               (aksi pengguna)
+
 2000 profil ──▶ retrieval (hemat) ──▶ prescore (deterministik) ──▶ judge (LLM) ──▶ intro (LLM)
                30 kandidat            10-15 shortlist             6 match           1 pesan/kandidat
 ```
 
 ---
 
+## 0. Pembentukan Profil — Onboarding dan Profile Compiler
+
+Pembentukan profil sengaja dibagi menjadi dua agen. `OnboardingInterviewer` menjaga
+percakapan tetap natural dan menghasilkan **transkrip sumber**; `ProfileCompiler`
+mengubah sumber tersebut menjadi **draft terstruktur**. Pemisahan ini mencegah ucapan
+pengguna berubah menjadi klaim profil atau data persisten tanpa kesempatan untuk
+ditinjau.
+
+```text
+jawaban pengguna
+      │
+      ▼
+OnboardingSession ──▶ OnboardingInterviewer ──▶ transkrip selesai
+                                                     │
+                                                     ▼
+                                            ProfileCompiler (LLM)
+                                                     │
+                                                     ▼
+                                          ProfileDraft tervalidasi
+                                                     │
+                                                     ▼
+                                         edit + validasi pengguna
+                                                     │
+                                                     ▼
+                                  persist / rebuild embedding (terpisah)
+```
+
+### 0.1 Onboarding interviewer — `src/agents/onboarding.py`
+
+Tujuan onboarding adalah memperoleh informasi yang cukup untuk menjawab dua hal:
+kapan orang lain akan mendapat manfaat dari bertemu pengguna, dan kapan pengguna
+akan mendapat manfaat dari bertemu orang lain. Agen menggali pengetahuan, pengalaman,
+minat, proyek, bantuan yang dapat diberikan/dibutuhkan, orang yang ingin ditemui, dan
+jenis interaksi yang terbuka—tanpa memaksa semua kategori terisi.
+
+Aturan percakapan utamanya:
+
+- satu pertanyaan per giliran, singkat, dan mengikuti jawaban aktual;
+- meminta contoh konkret alih-alih menerima label generik;
+- tidak menyamakan minat dengan keahlian, paparan dengan pengalaman, pengalaman
+  dengan kesediaan membantu, atau aspirasi dengan kemampuan saat ini;
+- tidak menanyakan hal sensitif hanya demi memperkaya profil;
+- menargetkan sekitar 5–8 jawaban bermakna, tetapi boleh lanjut jika masih ada
+  ambiguitas penting.
+
+`OnboardingSession` menyimpan urutan `Turn(role, content)` dan flag `finished`.
+Jawaban kosong ditolak, sesi yang sudah selesai tidak dapat menerima jawaban baru,
+dan sapaan seperti `hello` atau `start my onboarding` tidak dihitung sebagai jawaban
+bermakna. `state()` mengekspos bentuk berikut kepada agen:
+
+```json
+{
+  "meaningfulUserAnswers": 3,
+  "finished": false,
+  "transcript": [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."}
+  ]
+}
+```
+
+Setiap `next_turn()` memakai Responses API dengan dua function tool tanpa argumen:
+
+| Tool | Fungsi |
+| :-- | :-- |
+| `getOnboardingState` | Membaca jumlah jawaban, status selesai, dan seluruh transkrip. Tool ini diwajibkan pada panggilan pertama setiap giliran. |
+| `finishOnboarding` | Mengubah `session.finished` menjadi `true` ketika informasi sudah cukup. |
+
+Setelah tool dieksekusi lokal, hasilnya dikirim kembali sebagai
+`function_call_output`; model kemudian boleh bertanya lagi atau menyelesaikan sesi.
+Loop dibatasi delapan putaran tool agar tool call yang menyimpang tidak berjalan tanpa
+batas. Bila model tidak mengeluarkan teks, kode menyediakan pesan fallback sesuai
+status sesi. Setiap panggilan model menghasilkan trace stage `onboarding`, termasuk
+model, prompt version `onboarding_v1`, token, latensi, biaya estimasi, request, dan
+response.
+
+Laboratorium `01_onboarding.py` menambahkan batas jumlah jawaban yang dapat diatur.
+Jika batas tercapai, lab menutup sesi tanpa panggilan model tambahan. Lab menyimpan
+trace ke DuckDB dan menampilkan transkrip final untuk disalin ke profile compiler.
+Interviewer sendiri **tidak membuat atau menyimpan profil**.
+
+### 0.2 Profile compiler — `src/agents/profile_compiler.py`
+
+`ProfileCompiler.compile_with_trace()` menerima transkrip non-kosong, mengirimkannya
+sebagai JSON ke Responses API, dan meminta Structured Output strict bernama
+`profile_draft`. Default-nya memakai `gpt-5.6-luna`, reasoning `low`, dan maksimum
+1.200 output token.
+
+Compiler mempertahankan makna pernyataan dan kategori sumbernya. Contohnya, “ingin
+belajar cybersecurity” masuk `interests`/`lookingFor`, bukan otomatis `knowledge`;
+“pernah ikut CTF tiga tahun” dapat menjadi `experience`; dan kesediaan mengajar harus
+dinyatakan sebelum masuk `canHelpWith`. Compiler tidak mengarang atau memverifikasi
+klaim secara independen.
+
+Draft wajib memiliki kontrak berikut (`src/schemas/profile.py`):
+
+| Field | Bentuk dan makna |
+| :-- | :-- |
+| `headline`, `summary` | String non-kosong yang singkat dan faktual. |
+| `knowledge` | Pengetahuan yang memang dinyatakan pengguna. |
+| `experience` | Pengalaman hidup/profesional yang konkret. |
+| `interests` | Topik atau aktivitas yang diminati. |
+| `canHelpWith` | Hal yang secara eksplisit dapat dibantu pengguna. |
+| `lookingFor` | Bantuan, orang, atau aktivitas yang dicari. |
+| `openTo` | Hanya enum interaksi: `advice`, `being_hired`, `being_mentored`, `cofounding`, `collaboration`, `friendship`, `hiring`, `meeting_people`, `mentoring`, `recommendations`. |
+| `projects` | Daftar objek dengan `description` wajib serta `name`/`status` opsional. |
+| `location` | String non-kosong bila disebutkan eksplisit, atau `null`. |
+
+Aktivitas seperti *photo walk* bukan nilai `openTo`; aktivitas tetap berada di
+`interests` atau `lookingFor`, sementara `openTo` hanya menyatakan bentuk hubungan
+sosial yang luas. Setelah Structured Output diterima, `ProfileDraft.from_dict()`
+melakukan validasi kedua di aplikasi: field wajib, string non-kosong, enum `openTo`,
+struktur proyek, dan lokasi. JSON atau kontrak yang invalid diubah menjadi error dan
+tidak menghasilkan draft.
+
+Keluaran `compile_with_trace()` adalah `(draft, raw_response, trace)`. Trace memakai
+stage `profile_compiler` dan prompt version `profile_compiler_v1`; error API juga
+diberi trace pada exception agar tetap dapat diaudit.
+
+Laboratorium `02_profile_compiler.py` memperlihatkan alur persetujuan eksplisit:
+
+1. pengguna memasukkan transkrip selesai (dan opsional profil lama sebagai konteks
+   pembaruan);
+2. compiler menghasilkan draft tervalidasi;
+3. draft ditampilkan dalam editor JSON dan boleh diubah;
+4. tombol accept menjalankan `ProfileDraft.from_dict()` sekali lagi;
+5. hasil yang diterima hanya siap untuk langkah persistensi/embedding berikutnya—lab
+   ini sendiri **tidak menulis profil atau memperbarui index embedding**.
+
+### 0.3 Handoff ke pipeline pencocokan
+
+Hanya profil yang telah ditinjau dan diterima yang semestinya dipersistenkan lalu
+dimasukkan ke `EmbeddingIndex`. Tiga dokumen arah (`offers`, `interests`, `needs`)
+kemudian dibentuk oleh `profile_vectors()` seperti dijelaskan di §3.1 dan §5.2.
+Pipeline pencocokan di bagian berikut mengasumsikan langkah penerimaan, persistensi,
+dan indexing ini sudah selesai; onboarding/compiler bukan bagian dari `Pipeline.run()`.
+
+---
+
 ## 1. Gambaran Umum Pipeline
 
-Pipeline berjalan end-to-end dari teks query bebas → daftar rekomendasi yang sudah
-discoring & diberi draft pesan pembuka. Setiap tahap dipisahkan agar tiap bagian bisa
+Pipeline pencocokan berjalan end-to-end dari teks query bebas → daftar rekomendasi
+yang sudah di-scoring & diberi draft pesan pembuka. Setiap tahap dipisahkan agar tiap bagian bisa
 diisolasi (notebook 03/04/07), diuji, dan di-*trace* biaya/latensinya.
 
 | Tahap | Fungsi | Biaya | File |
