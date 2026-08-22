@@ -1,0 +1,95 @@
+name: Deploy marimo ke high-server
+
+on:
+  workflow_dispatch:
+    inputs:
+      ssh_host:
+        description: "SSH host target"
+        required: false
+        default: "38.253.224.23"
+      ssh_port:
+        description: "SSH port"
+        required: false
+        default: "23037"
+      ssh_user:
+        description: "SSH user"
+        required: false
+        default: "root"
+      marimo_password:
+        description: "Password marimo (default tecnofest)"
+        required: false
+        default: "tecnofest"
+  push:
+    branches:
+      - dev/denisetiya
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ke high-server
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || secrets.SSH_DEPLOY_KEY != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH auth (deploy key) atau pakai password
+        id: ssh_auth
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+        run: |
+          if [[ -n "${DEPLOY_KEY}" ]]; then
+            mkdir -p ~/.ssh
+            echo "${DEPLOY_KEY}" > ~/.ssh/id_deploy
+            chmod 600 ~/.ssh/id_deploy
+            # Inisialisasi known_hosts agar tidak prompt (fingerprint di-scan saat runtime)
+            ssh-keyscan -p "${{ github.event.inputs.ssh_port || 23037 }}" "${{ github.event.inputs.ssh_host || '38.253.224.23' }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+            echo "auth_method=key" >> "$GITHUB_OUTPUT"
+          else
+            echo "auth_method=password" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install sshpass
+        if: steps.ssh_auth.outputs.auth_method == 'password'
+        run: sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+      - name: Deploy via rsync + ssh
+        env:
+          DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          MARIMO_PASSWORD: ${{ github.event.inputs.marimo_password || 'tecnofest' }}
+          CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          HOST="${{ github.event.inputs.ssh_host || '38.253.224.23' }}"
+          PORT="${{ github.event.inputs.ssh_port || 23037 }}"
+          USER="${{ github.event.inputs.ssh_user || 'root' }}"
+          APP_DIR="/opt/pencipta-community-pipeline-2"
+
+          ssh_opts=(-p "${PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null)
+
+          # --- Rsync kode (file penting saja; data/*.duckdb via volume) ---
+          rsync -az --delete \
+            -e "ssh ${ssh_opts[*]} $( [[ "${steps.ssh_auth.outputs.auth_method}" == "password" ]] && echo "-o StrictHostKeyChecking=no" || true )" \
+            --exclude '.git' --exclude '.venv' --exclude '__pycache__' --exclude 'data/*.duckdb' \
+            --exclude '.env' \
+            ./ "${USER}@${HOST}:${APP_DIR}/"
+
+          # --- Jalankan bootstrap + deploy di server ---
+          ssh_cmd() {
+            if [[ "${steps.ssh_auth.outputs.auth_method}" == "key" ]]; then
+              ssh -i ~/.ssh/id_deploy "${ssh_opts[@]}" "$1" "$2"
+            else
+              sshpass -p "${SSH_PASSWORD}" ssh "${ssh_opts[@]}" "$1" "$2"
+            fi
+          }
+
+          # Tulis .env runtime di server (rahasia via secret/input)
+          ssh_cmd "${USER}@${HOST}" "mkdir -p ${APP_DIR}"
+          if [[ -n "${CF_TUNNEL_TOKEN:-}" ]]; then
+            ssh_cmd "${USER}@${HOST}" "grep -q '^CF_TUNNEL_TOKEN=' ${APP_DIR}/.env 2>/dev/null || echo 'CF_TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}' >> ${APP_DIR}/.env"
+          fi
+          ssh_cmd "${USER}@${HOST}" "grep -q '^MARIMO_PASSWORD=' ${APP_DIR}/.env 2>/dev/null || echo 'MARIMO_PASSWORD=${MARIMO_PASSWORD}' >> ${APP_DIR}/.env"
+          ssh_cmd "${USER}@${HOST}" "chmod +x ${APP_DIR}/scripts/server_deploy.sh && MARIMO_PASSWORD='${MARIMO_PASSWORD}' CF_TUNNEL_TOKEN='${CF_TUNNEL_TOKEN}' ${APP_DIR}/scripts/server_deploy.sh"

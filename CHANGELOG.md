@@ -116,9 +116,36 @@ Branch `dev/denisetiya` menangani retrieval, prescore, dan orkestrasi matching.
 Keempat bagian desain (precomputed index, restrukturisasi `search_people`,
 prescore terpusat, threshold judge) **sudah diimplementasikan**, ditambah
 laporan token per-run/per-user, seed 2.000 profil, provider kustom via `.env`,
-dan normalisasi adaptif untuk provider non-OpenAI. Verifikasi akhir: 37 test
-pass, keenam notebook lolos `marimo check`, `git diff --check` bersih, dan
-pipeline live end-to-end berhasil di provider kustom (results sesuai harapan).
+normalisasi adaptif untuk provider non-OpenAI, dan perbaikan retrieval deterministik
+bab 9 (Jaccard, adaptive normalize, soft/avoid, MMR, judge isolasi, rerank 0.7/0.3,
+intro paralel). Verifikasi akhir: 38 test pass, keenam notebook lolos `marimo check`,
+`git diff --check` bersih, pipeline live end-to-end berhasil di provider kustom
+(results sesuai harapan), dan tuning offline `hits@10 6/7` stabil.
+
+### 9. Retrieval deterministik: prescore kontinu, normalisasi adaptif, soft/avoid & MMR
+
+- **Sebelum:**
+  - `interaction_score` diskrit 0/0.5/1.0 (overlap 1 dari 3 sama dengan 1 dari 2).
+  - Similarity 3 dimensi dicampur tanpa normalisasi — dimensi dengan scale cosine tinggi mendominasi.
+  - `softPreferences` dan `avoidMatchingOn` dari need interpreter di-coerce tapi tidak pernah dipakai di ranking.
+  - Filter hard relax diam-diam (drop interaction type jika 0 kandidat) tanpa sinyal ke caller.
+  - `per_dimension_count == retrieval_count == 30` — tuning recall vs limit terkunci.
+  - Shortlist homogen — top offers similarity bisa isi seluruh top-N dengan profil mirip.
+  - `prescore` dibocorkan ke judge (`_compact(...) | {"prescore": ...}`) → anchoring LLM.
+  - Intro sequential per match — latensi linear dengan jumlah match.
+  - Ranking akhir murni `judge_score`.
+- **Sesudah:**
+  - `interaction_score` Jaccard kontinu `|req∩cand|/|req∪cand|` di `src/retrieval/prescore.py:15` — backward-compat 2/2=1.0, 1/2=0.5.
+  - `normalize_dimensions` min-max per dimensi hanya untuk jalur embedding (`_source=="embedding"`); jalur lexical skip normalisasi agar noise sparse tidak terinflasi — `src/retrieval/search.py:119`.
+  - `soft_preference_score` (boost aditif cap +0.12) + `avoidance_penalty` (dampener multiplikatif 0.8, Jaccard + substring + stemmer jamak) wired ke `weighted_prescore` — `prescore.py:35,58,107`.
+  - `_filtered_with_meta` return `(candidates, flag)` eksplisit `none|interaction_relaxed|location_relaxed` — `search.py:133`.
+  - `PipelineConfig` split `retrieval_per_dimension=50` vs `retrieval_count=30`, `min_prescore=None` (non-filtering default setelah tuning — lexical top `0.13` akan kill recall bila `0.15`), `normalize_similarities`, `diversify_retrieval`, `mmr_lambda=0.7` — `pipeline.py:25`.
+  - `_mmr_rerank` MMR `λ*prescore − (1−λ)*max_jaccard` opt-in `diversify=True` — `search.py:190`.
+  - Judge isolasi: `Pipeline.run` tidak kirim `prescore` bila `isolate_prescore_from_judge=True` (default); `run_judge_experiment` hormati `include_prescore` — `pipeline.py:440`.
+  - `_rerank_with_prescore` combined `0.7*judge + 0.3*prescore`, sort sebelum intro, `combined_score` persist di `match_results` — `pipeline.py:378,452`.
+  - Intro paralel `ThreadPoolExecutor(max 4)` bila `parallel_intro=True` dan `len>1`, preserve rerank order — `pipeline.py:462`.
+- **Mengapa:** Menutup semua lubang audit retrieval→prescore→orkestrasi: prescore kontinu & scale-invariant, preferensi/avoid benar-benar memengaruhi ranking, recall per-dimensi terpisah dari limit, diversity terkontrol, judge tidak ter-anchoring, ranking final gabungkan sinyal deterministik + LLM, latensi intro turun. Hasil tuning offline (lexical fallback, provider embedding `403`): `hits@10 6/7` stabil; `min_prescore 0.15` kill recall → default `None`; embedding path tetap normalize adaptif.
+- **Verifikasi:** `38 passed`, `normalize=True` adaptif vs `False` sama `6/7`; `avoid ranked expert 0.92 vs beginner 0.03` benar; MMR tidak crash; `PipelineConfig` import ok.
 
 ## Belum rilis / direncanakan
 

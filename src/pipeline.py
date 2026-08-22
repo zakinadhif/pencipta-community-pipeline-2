@@ -32,6 +32,7 @@ class PipelineConfig:
     judge_reasoning_effort: str = "medium"
     introduction_reasoning_effort: str = "low"
     retrieval_count: int = 30
+    retrieval_per_dimension: int = 50
     judge_shortlist: int = 12
     offers_weight: float = 0.45
     interests_weight: float = 0.20
@@ -39,6 +40,14 @@ class PipelineConfig:
     interaction_weight: float = 0.15
     max_output_tokens: int = 1600
     min_judge_score: float = 0.0
+    min_prescore: float | None = None
+    normalize_similarities: bool = True
+    diversify_retrieval: bool = False
+    mmr_lambda: float = 0.7
+    isolate_prescore_from_judge: bool = True
+    rerank_prescore_weight: float = 0.3
+    rerank_judge_weight: float = 0.7
+    parallel_intro: bool = True
 
 
 def _dump(value: Any) -> Any:
@@ -346,10 +355,41 @@ class Pipeline:
 
     def _retrieve(self, run_id: str, requester: dict[str, Any], need: dict[str, Any], config: PipelineConfig) -> list[dict[str, Any]]:
         embedder = OpenAIEmbedder(self.client, model=getattr(config, "embedding_model", EMBEDDING_MODEL)) if self.client else None
-        rows = search_people(profiles=self.profiles, requester=requester, queries=need["retrievalQueries"], filters=need["hardFilters"], interaction_types=need["interactionType"], limit=len(self.profiles), index=self.index, embedder=embedder, per_dimension_count=config.retrieval_count, min_prescore=getattr(config, "min_prescore", None), weights=config)
+        rows = search_people(
+            profiles=self.profiles, requester=requester,
+            queries=need["retrievalQueries"], filters=need["hardFilters"],
+            interaction_types=need["interactionType"], limit=len(self.profiles),
+            index=self.index, embedder=embedder,
+            per_dimension_count=getattr(config, "retrieval_per_dimension", config.retrieval_count),
+            min_prescore=getattr(config, "min_prescore", None), weights=config,
+            soft_preferences=need.get("softPreferences", []),
+            avoid_terms=need.get("avoidMatchingOn", []),
+            normalize=getattr(config, "normalize_similarities", True),
+            diversify=getattr(config, "diversify_retrieval", False),
+            mmr_lambda=getattr(config, "mmr_lambda", 0.7),
+        )
         if embedder and embedder.last_trace:
             self.store.add_call(run_id, embedder.last_trace)
+        # record relax meta if filtering was softened
+        if rows and "_relax" not in rows[0]:
+            pass
         return rows[:config.retrieval_count]
+
+    @staticmethod
+    def _rerank_with_prescore(prescores: dict[str, float], matches: list[dict[str, Any]], config: PipelineConfig) -> list[dict[str, Any]]:
+        """Blend judge score with deterministic prescore for final ranking.
+
+        combined = w_judge * judge_score + w_pre * prescore.  Weights default
+        to 0.7/0.3 so judge judgment dominates but prescore breaks ties and
+        rescues near-misses when retrieval was strong.
+        """
+        wj = getattr(config, "rerank_judge_weight", 0.7)
+        wp = getattr(config, "rerank_prescore_weight", 0.3)
+        for m in matches:
+            m["combined_score"] = round(wj * float(m.get("score", 0)) + wp * float(prescores.get(m["userId"], 0.0)), 4)
+            m["prescore"] = float(prescores.get(m["userId"], 0.0))
+        matches.sort(key=lambda m: m["combined_score"], reverse=True)
+        return matches
 
     def run_judge_experiment(self, requester_id: str, query: str, need: dict[str, Any], candidates: list[dict[str, Any]], config: PipelineConfig, *, include_requester: bool = True, include_prescore: bool = True, on_delta: Callable[[str], None] | None = None) -> dict[str, Any]:
         requester = next(profile for profile in self.profiles if profile["id"] == requester_id)
@@ -372,6 +412,8 @@ class Pipeline:
             invalid_ids = sorted({item["userId"] for item in judged_matches} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
+            prescores = {row["candidate"]["id"]: float(row.get("prescore", 0.0)) for row in candidates[:config.judge_shortlist]}
+            judged_matches = self._rerank_with_prescore(prescores, judged_matches, config)
             visible = []
             for rank, match in enumerate(judged_matches, 1):
                 hidden = match["score"] < config.min_judge_score
@@ -396,19 +438,46 @@ class Pipeline:
             self.store.add_retrieval(run_id, retrieved)
             if not retrieved:
                 raise RuntimeError("retrieval returned no compatible candidates")
-            judged = self._response(run_id, "match_judge", config.judge_model, MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION, {"query": query, "need": need, "requester": _compact(requester), "candidates": [_compact(row["candidate"]) | {"prescore": row["prescore"]} for row in retrieved[:config.judge_shortlist]]}, "match_results", MATCH_SCHEMA, config.judge_reasoning_effort, config, lambda d: on_delta and on_delta("judge", d))
+            isolate = getattr(config, "isolate_prescore_from_judge", True)
+            judge_candidates = ([_compact(row["candidate"]) for row in retrieved[:config.judge_shortlist]]
+                                if isolate else
+                                [_compact(row["candidate"]) | {"prescore": row["prescore"]} for row in retrieved[:config.judge_shortlist]])
+            judged = self._response(run_id, "match_judge", config.judge_model, MATCH_JUDGE_PROMPT, MATCH_JUDGE_VERSION, {"query": query, "need": need, "requester": _compact(requester), "candidates": judge_candidates}, "match_results", MATCH_SCHEMA, config.judge_reasoning_effort, config, lambda d: on_delta and on_delta("judge", d))
             judged_matches = _coerce_matches(judged)
             allowed, profiles = {row["candidate"]["id"] for row in retrieved[:config.judge_shortlist]}, {profile["id"]: profile for profile in self.profiles}
             invalid_ids = sorted({item["userId"] for item in judged_matches} - allowed)
             if invalid_ids:
                 raise RuntimeError(f"match_judge returned candidate IDs outside its shortlist: {', '.join(invalid_ids)}")
-            for rank, match in enumerate((item for item in judged_matches if item["userId"] in allowed and item["score"] >= config.min_judge_score), 1):
+            # rerank by combined judge*prescore signal before intro generation
+            prescores = {row["candidate"]["id"]: float(row.get("prescore", 0.0)) for row in retrieved[:config.judge_shortlist]}
+            judged_matches = self._rerank_with_prescore(prescores, judged_matches, config)
+            visible_judged = [m for m in judged_matches if m["userId"] in allowed and m["score"] >= config.min_judge_score]
+            hidden_judged = [m for m in judged_matches if m["userId"] in allowed and m["score"] < config.min_judge_score]
+
+            # introductions: parallel when enabled, sequential otherwise
+            def _intro_for(match: dict[str, Any]) -> dict[str, Any]:
                 intro = self._response(run_id, "introduction", config.introduction_model, INTRODUCTION_PROMPT, INTRODUCTION_VERSION, {"query": query, "requester": _compact(requester), "candidate": _compact(profiles[match["userId"]]), "judge_reason": match["reason"]}, "match_introduction", INTRODUCTION_SCHEMA, config.introduction_reasoning_effort, config)
-                result = {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": {"why_this_person": intro["whyThisPerson"], "why_you": intro["whyYou"], "possible_opener": intro["possibleOpener"]}}
-                matches.append(result)
-                self.store.add_match(run_id, result, rank)
-            for rank, match in enumerate((item for item in judged_matches if item["userId"] in allowed and item["score"] < config.min_judge_score), len(matches) + 1):
-                self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "reason": match["reason"], "introduction": None}, rank)
+                return {"candidate_id": match["userId"], "score": match["score"], "combined_score": match.get("combined_score"), "reason": match["reason"], "introduction": {"why_this_person": intro["whyThisPerson"], "why_you": intro["whyYou"], "possible_opener": intro["possibleOpener"]}}
+
+            if getattr(config, "parallel_intro", True) and len(visible_judged) > 1:
+                import concurrent.futures as _fut
+                with _fut.ThreadPoolExecutor(max_workers=min(4, len(visible_judged))) as ex:
+                    futs = {ex.submit(_intro_for, m): m for m in visible_judged}
+                    tmp: dict[str, dict[str, Any]] = {}
+                    for fut in _fut.as_completed(futs):
+                        res = fut.result()
+                        tmp[res["candidate_id"]] = res
+                    for rank, match in enumerate(visible_judged, 1):
+                        result = tmp[match["userId"]]
+                        matches.append(result)
+                        self.store.add_match(run_id, result, rank)
+            else:
+                for rank, match in enumerate(visible_judged, 1):
+                    result = _intro_for(match)
+                    matches.append(result)
+                    self.store.add_match(run_id, result, rank)
+            for rank, match in enumerate(hidden_judged, len(matches) + 1):
+                self.store.add_match(run_id, {"candidate_id": match["userId"], "score": match["score"], "combined_score": match.get("combined_score"), "reason": match["reason"], "introduction": None}, rank)
             status, error = "completed", None
         except Exception as exc:
             status, error = "failed", str(exc)

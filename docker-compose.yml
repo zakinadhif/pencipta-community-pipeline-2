@@ -1,0 +1,42 @@
+services:
+  marimo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pencipta-marimo:latest
+    container_name: pencipta-marimo
+    restart: unless-stopped
+    ports:
+      - "2718:2718"
+    environment:
+      # Marimo auth — password diset dari shell environment/CI (bukan di-commit)
+      MARIMO_PASSWORD: "${MARIMO_PASSWORD:-tecnofest}"
+      # Provider/API dipsas lewat .env server (rahasia), bukan di image
+    env_file:
+      - .env
+    volumes:
+      # Persist DuckDB tracing DB + artifacts lintas deploy
+      - marimo_data:/app/data
+    init: true
+    networks:
+      - default
+      - home_router
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pencipta-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    environment:
+      CF_TUNNEL_TOKEN: "${CF_TUNNEL_TOKEN}"
+    # Host network: cloudflared needs real internet egress for the QUIC edge,
+    # and reaches marimo via host's localhost:2718 (marimo binds 0.0.0.0).
+    network_mode: "host"
+
+volumes:
+  marimo_data:
+
+networks:
+  home_router:
+    external: true
+    name: home_default

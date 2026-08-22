@@ -15,7 +15,7 @@ class EmbeddingIndex:
         self.texts = texts or {}
 
     @classmethod
-    def rebuild(cls, store: ExperimentStore, profiles: list[dict[str, Any]], embedder: Any) -> "EmbeddingIndex":
+    def rebuild(cls, store: ExperimentStore, profiles: list[dict[str, Any]], embedder: Any, *, batch_size: int = 256) -> "EmbeddingIndex":
         store.create_vector_table()
         rows, doc_to_key = [], {}
         for profile in profiles:
@@ -24,10 +24,14 @@ class EmbeddingIndex:
                 text = getattr(vectors, kind)
                 if text.strip():
                     doc_to_key[(profile["id"], kind)] = text
-        texts = list(doc_to_key.values())
-        embeddings = embedder.embed(texts)
-        for (profile_id, kind), text in doc_to_key.items():
-            rows.append({"profile_id": profile_id, "kind": kind, "vector": embeddings[len(rows)], "text": text})
+        keys = list(doc_to_key.keys())
+        # Embed in batches: many providers cap request input length (e.g. 2048).
+        for start in range(0, len(keys), batch_size):
+            chunk = keys[start:start + batch_size]
+            texts = [doc_to_key[key] for key in chunk]
+            embeddings = embedder.embed(texts)
+            for key, vector in zip(chunk, embeddings):
+                rows.append({"profile_id": key[0], "kind": key[1], "vector": vector, "text": doc_to_key[key]})
         store.upsert_vector_rows(rows)
         return cls.load(store)
 
