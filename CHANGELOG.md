@@ -83,7 +83,7 @@ Branch `dev/denisetiya` menangani retrieval, prescore, dan orkestrasi matching.
   harga per model kustom via `MODEL_PRICE_<NAMA>=<input>,<output>`.
   `pricing_for` mengembalikan harga 0 (tidak crash) untuk model tanpa harga.
   URL asli hanya ada di `.env` (ter-ignore); tidak pernah di test/repo.
-- **Mengapa:** Kamu ingin memakai provider kustom yang OpenAI-API-compatible
+- **Mengapa:**  agar memakai provider kustom yang OpenAI-API-compatible
   dengan API key, base URL, dan model khusus, yang dikonfigurasi di `.env`.
 
 ### 8. Normalisasi adaptif untuk provider non-OpenAI
