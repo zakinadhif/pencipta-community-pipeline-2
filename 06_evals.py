@@ -10,6 +10,7 @@ def _():
     from pathlib import Path
     import marimo as mo
     from src.evaluation.metrics import aggregate_metrics, ranking_metrics
+    from src.evaluation.reporting import per_requester_tokens, per_run_tokens
     from src.tracing.storage import ExperimentStore
     root = Path(__file__).parent
     queries = json.loads((root / "data" / "eval_queries.json").read_text(encoding="utf-8"))
@@ -17,7 +18,7 @@ def _():
     def json_view(value):
         return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
 
-    return aggregate_metrics, json_view, mo, queries, ranking_metrics, store
+    return aggregate_metrics, json_view, mo, per_requester_tokens, per_run_tokens, queries, ranking_metrics, store
 
 
 @app.cell
@@ -35,7 +36,7 @@ def _(mo, queries):
 
 
 @app.cell
-def _(aggregate_metrics, json_view, mo, queries, ranking_metrics, refresh, store):
+def _(aggregate_metrics, json_view, mo, per_requester_tokens, per_run_tokens, queries, ranking_metrics, refresh, store):
     mo.stop(not refresh.value)
     _runs_df = store.dataframe("select id, query, config_json, status, error, total_latency_ms, estimated_cost_usd, created_at from runs order by created_at desc")
     _evals_df = store.dataframe("select run_id, candidate_id, rating, notes, created_at from human_evaluations order by created_at desc")
@@ -59,6 +60,8 @@ def _(aggregate_metrics, json_view, mo, queries, ranking_metrics, refresh, store
         mo.md("## Known-good retrieval recall proxy"), mo.ui.table(_recall_rows, selection=None),
         mo.md("## Run comparison"), mo.ui.table(_runs, selection=None),
         mo.md("## Saved human ratings"), mo.ui.table(_evals_df.to_dict("records"), selection=None),
+        mo.md("## Per-run token & cost detail"), mo.ui.table(per_run_tokens(store), selection=None),
+        mo.md("## Token consumption per requester"), mo.ui.table(per_requester_tokens(store), selection=None),
     ])
     return
 

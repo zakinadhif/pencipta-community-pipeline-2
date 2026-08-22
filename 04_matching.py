@@ -15,7 +15,7 @@ def _():
     from dotenv import load_dotenv
 
     from src.pipeline import Pipeline, PipelineConfig
-    from src.retrieval.prescore import weighted_prescore
+    from src.retrieval.index import EmbeddingIndex
     from src.retrieval.search import search_people
     from src.tracing.storage import ExperimentStore
 
@@ -26,7 +26,7 @@ def _():
     def json_view(value):
         return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
 
-    return ExperimentStore, Pipeline, PipelineConfig, json, json_view, mo, os, profiles, search_people, store, weighted_prescore
+    return EmbeddingIndex, ExperimentStore, Pipeline, PipelineConfig, json, json_view, mo, os, profiles, search_people, store
 
 
 @app.cell
@@ -49,28 +49,26 @@ def _(json, mo, profiles):
     reasoning = mo.ui.dropdown(label="Reasoning", options=["none", "low", "medium", "high"], value="medium")
     prompt_version = mo.ui.dropdown(label="Prompt version", options=["match_judge_v1"], value="match_judge_v1")
     count = mo.ui.number(label="Candidate count", start=1, stop=25, value=8)
+    min_judge_score = mo.ui.number(label="Min judge score", start=0, stop=1, step=0.05, value=0.0)
     include_requester = mo.ui.switch(label="Include requester profile", value=True)
     include_prescore = mo.ui.switch(label="Include prescore", value=True)
     max_output = mo.ui.number(label="Maximum output tokens", start=128, stop=4000, value=1600)
     api_key = mo.ui.text(label="OpenAI API key (or OPENAI_API_KEY)", kind="password", full_width=True)
     run = mo.ui.run_button(label="Run isolated judge", kind="success")
-    mo.vstack([requester, query, need, mo.hstack([model, reasoning, prompt_version, count, include_requester, include_prescore, max_output]), api_key, run])
-    return api_key, count, include_prescore, include_requester, max_output, model, need, prompt_version, query, reasoning, requester, run
+    mo.vstack([requester, query, need, mo.hstack([model, reasoning, prompt_version, count, min_judge_score, include_requester, include_prescore, max_output]), api_key, run])
+    return api_key, count, include_prescore, include_requester, max_output, min_judge_score, model, need, prompt_version, query, reasoning, requester, run
 
 
 @app.cell
-def _(Pipeline, PipelineConfig, api_key, count, include_prescore, include_requester, json, max_output, mo, model, need, os, profiles, query, reasoning, requester, run, search_people, store, weighted_prescore):
+def _(EmbeddingIndex, Pipeline, PipelineConfig, api_key, count, include_prescore, include_requester, json, max_output, min_judge_score, mo, model, need, os, profiles, query, reasoning, requester, run, search_people, store):
     mo.stop(not run.value)
     secret = api_key.value.strip() or os.getenv("OPENAI_API_KEY")
     mo.stop(not secret, mo.callout("Set OPENAI_API_KEY to run the isolated judge.", kind="warn"))
     interpreted = json.loads(need.value)
     requester_profile = next(profile for profile in profiles if profile["id"] == requester.value)
-    config = PipelineConfig(judge_model=model.value, judge_reasoning_effort=reasoning.value, judge_shortlist=int(count.value), max_output_tokens=int(max_output.value))
-    candidates = search_people(profiles=profiles, requester=requester_profile, queries=interpreted["retrievalQueries"], filters=interpreted["hardFilters"], interaction_types=interpreted["interactionType"], limit=len(profiles))
-    for row in candidates:
-        row["interaction_score"] = float(bool(set(interpreted["interactionType"]) & set(row["candidate"].get("openTo", []))))
-        row["prescore"] = weighted_prescore(row["offers_similarity"], row["interests_similarity"], row["reciprocal_similarity"], row["interaction_score"], config)
-    candidates.sort(key=lambda row: row["prescore"], reverse=True)
+    config = PipelineConfig(judge_model=model.value, judge_reasoning_effort=reasoning.value, judge_shortlist=int(count.value), max_output_tokens=int(max_output.value), min_judge_score=float(min_judge_score.value))
+    index = EmbeddingIndex.load(store)
+    candidates = search_people(profiles=profiles, requester=requester_profile, queries=interpreted["retrievalQueries"], filters=interpreted["hardFilters"], interaction_types=interpreted["interactionType"], limit=int(count.value), index=index, weights=config)
     streamed = []
     result = Pipeline(store, profiles, secret).run_judge_experiment(requester.value, query.value, interpreted, candidates, config, include_requester=include_requester.value, include_prescore=include_prescore.value, on_delta=streamed.append)
     result["streamed_text"] = "".join(streamed)

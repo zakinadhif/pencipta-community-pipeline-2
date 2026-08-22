@@ -59,6 +59,11 @@ class ExperimentStore:
                   id varchar primary key, fetched_at varchar, start_time bigint, end_time bigint,
                   project_id varchar, line_item varchar, amount_usd double, raw_json varchar
                 );
+                create table if not exists profile_vectors (
+                  profile_id varchar, kind varchar,
+                  vector float[], text varchar,
+                  primary key (profile_id, kind)
+                );
             """)
 
     @contextmanager
@@ -142,6 +147,22 @@ class ExperimentStore:
                         str(uuid.uuid4()), _now(), bucket.get("start_time"), bucket.get("end_time"),
                         result.get("project_id"), result.get("line_item"), result.get("amount", {}).get("value"), _json(result),
                     ])
+
+    def create_vector_table(self) -> None:
+        with self._connection() as con:
+            con.execute("create table if not exists profile_vectors (profile_id varchar, kind varchar, vector float[], text varchar, primary key (profile_id, kind))")
+
+    def upsert_vector_rows(self, rows: list[dict[str, Any]]) -> None:
+        with self._connection() as con:
+            con.execute("delete from profile_vectors")
+            for row in rows:
+                con.execute("insert into profile_vectors values (?, ?, ?, ?)",
+                            [row["profile_id"], row["kind"], row["vector"], row["text"]])
+
+    def load_vector_rows(self) -> list[dict[str, Any]]:
+        with self._connection() as con:
+            return [{"profile_id": r[0], "kind": r[1], "vector": r[2], "text": r[3]}
+                    for r in con.execute("select profile_id, kind, vector, text from profile_vectors").fetchall()]
 
     def dataframe(self, sql: str, parameters: list[Any] | None = None):
         with self._connection() as con:

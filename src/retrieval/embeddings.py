@@ -6,10 +6,19 @@ import time
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from ..config import DEFAULT_EMBEDDING_MODEL, provider_config
 from ..tracing.trace import make_trace
 
 
-EMBEDDING_MODEL = "text-embedding-3-large"
+def _resolve_embedding_model() -> str:
+    """Prefer the runtime provider config (env EMBEDDING_MODEL), else default."""
+    try:
+        return provider_config()["embedding_model"] or DEFAULT_EMBEDDING_MODEL
+    except Exception:
+        return DEFAULT_EMBEDDING_MODEL
+
+
+EMBEDDING_MODEL = _resolve_embedding_model()
 
 
 def _joined(values: list[str]) -> str:

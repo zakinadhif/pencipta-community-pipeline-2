@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.marimo/
+__marimo__/
+.pytest_cache/
+
+# Secrets & local
+.env
+.env.*
+!.env.example
+
+# Data (dev DB — jangan masuk image; dipersist via volume marimo_data)
+data/*.duckdb
+data/*.duckdb.*
+
+# Git
+.git/
+.gitignore
+
+# Docs/misc yang tidak dibutuhkan di runtime
+docs/
+plans/
+.github/
+CHANGELOG.md

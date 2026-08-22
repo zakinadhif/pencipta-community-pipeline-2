@@ -1,60 +1,30 @@
 """Prompt contract for judging a short, deterministic candidate list."""
 
-MATCH_JUDGE_VERSION = "match_judge_v1"
-MATCH_JUDGE_PROMPT = """You judge whether two humans have a concrete reason to interact.
+MATCH_JUDGE_VERSION = "match_judge_v2"
+MATCH_JUDGE_PROMPT = """You judge whether two humans in a community platform have a concrete, mutually valuable reason to interact.
 
-You are NOT ranking profile similarity.
+Evaluate the candidates on the shortlist against the requester's stated query and interpreted need.
 
-You are ranking the likelihood that an interaction between the requester
-and candidate would be relevant, welcomed, and useful.
+CRITERIA:
+1. RELEVANCE: Can this person fulfill or align with what the requester is looking for (skills, role, background, location, mentorship/peer needs)?
+2. RECIPROCITY & MUTUAL VALUE: Is there a plausible reason both people could benefit from connecting (e.g. knowledge exchange, peer connection, mentoring, shared domain interests)?
+3. INTERACTION FIT: Is the candidate open to this style of interaction (e.g. collaboration, advice, mentoring, meeting people)?
+4. COMPLEMENTARITY: Avoid matching someone looking for a specific skill with another beginner who also needs that same skill.
 
-Consider:
+SCORING GUIDELINE:
+- 0.80 - 1.00: Strong match with clear alignment on goal, skills, and mutual benefit.
+- 0.60 - 0.79: Good solid match who fits the requested criteria (role, location, skills, open to connect).
+- 0.40 - 0.59: Partial match with some overlapping interest or relevant background.
+- 0.00 - 0.39: Incompatible or clearly not matching the requested need.
 
-RELEVANCE
-Can this person help with what the requester wants?
+OUTPUT CONTRACT:
+Return a JSON object containing:
+"matches": [
+  {
+    "userId": "<candidate_id>",
+    "score": <number between 0.0 and 1.0>,
+    "reason": "<clear explanation of why this candidate was chosen and why they should talk>"
+  }
+]
 
-RECIPROCITY
-Is there a plausible reason this interaction makes sense for the candidate too?
-
-INTERACTION FIT
-Is the candidate open to this kind of interaction?
-
-COMPLEMENTARITY
-Do the two people bring useful complementary knowledge, experience,
-interests or needs?
-
-SPECIFICITY
-Can you explain exactly why these two particular people should talk?
-
-Do not rank people merely because their profiles are similar.
-
-Someone looking for a React developer should generally be matched with
-someone who knows React, not another person who is also looking for a
-React developer.
-
-Do not reward matches merely because both people:
-- work in technology
-- attend university
-- like the same broad topic
-- use the same programming language
-- live in the same place
-
-unless that characteristic actually contributes to the user's stated goal.
-
-A highly knowledgeable candidate who clearly does not want this type of
-interaction may be a worse match than a slightly less experienced person
-who explicitly welcomes it.
-
-Do not invent information beyond the supplied profiles.
-
-Return only candidates that have a concrete reason to interact.
-
-Do not force a fixed number of matches.
-
-A search with two excellent matches should return two excellent matches,
-not three weak ones added for completeness.
-
-A strong match should answer:
-
-"Why should THESE TWO particular people talk?"
-"""
+Include all shortlisted candidates that have a positive reason to interact (score >= 0.4)."""

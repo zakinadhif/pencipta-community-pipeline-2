@@ -15,12 +15,13 @@ def _():
     from dotenv import load_dotenv
 
     from src.pipeline import Pipeline, PipelineConfig, sync_authoritative_costs
+    from src.retrieval.index import EmbeddingIndex
     from src.tracing.storage import ExperimentStore
 
     def json_view(value):
         return mo.md(f"```json\n{json.dumps(value, indent=2, default=str, ensure_ascii=False)}\n```")
 
-    return ExperimentStore, Path, Pipeline, PipelineConfig, json, json_view, load_dotenv, mo, os, sync_authoritative_costs
+    return EmbeddingIndex, ExperimentStore, Path, Pipeline, PipelineConfig, json, json_view, load_dotenv, mo, os, sync_authoritative_costs
 
 
 @app.cell
@@ -72,14 +73,15 @@ def _(mo):
     reasoning = mo.ui.dropdown(label="Judge reasoning", options=["none", "low", "medium", "high"], value="medium")
     retrieval_count = mo.ui.number(label="Initial retrieval count", start=1, stop=50, value=30)
     shortlist = mo.ui.number(label="Judge shortlist", start=1, stop=25, value=12)
+    min_judge_score = mo.ui.number(label="Min judge score", start=0, stop=1, step=0.05, value=0.0)
     offers_weight = mo.ui.number(label="Offers weight", start=0, stop=1, step=0.05, value=0.45)
     interests_weight = mo.ui.number(label="Interests weight", start=0, stop=1, step=0.05, value=0.20)
     reciprocity_weight = mo.ui.number(label="Reciprocity weight", start=0, stop=1, step=0.05, value=0.20)
     interaction_weight = mo.ui.number(label="Interaction weight", start=0, stop=1, step=0.05, value=0.15)
     mo.md("## Experiment controls")
-    mo.hstack([need_model, judge_model, intro_model, reasoning, retrieval_count, shortlist], justify="start")
+    mo.hstack([need_model, judge_model, intro_model, reasoning, retrieval_count, shortlist, min_judge_score], justify="start")
     mo.hstack([offers_weight, interests_weight, reciprocity_weight, interaction_weight], justify="start")
-    return (intro_model, interaction_weight, interests_weight, judge_model, need_model,
+    return (intro_model, interaction_weight, interests_weight, judge_model, min_judge_score, need_model,
             offers_weight, reasoning, reciprocity_weight, retrieval_count, shortlist)
 
 
@@ -115,9 +117,9 @@ def _(admin_key, mo, os, store, sync_authoritative_costs, sync_costs):
 
 
 @app.cell
-def _(api_key, interaction_weight, interests_weight, intro_model,
-          judge_model, need_model, offers_weight, os, Pipeline, PipelineConfig, profiles,
-          query, reasoning, reciprocity_weight, requester, retrieval_count, run, shortlist, store, mo, max_output):
+def _(EmbeddingIndex, api_key, interaction_weight, interests_weight, intro_model,
+      judge_model, min_judge_score, need_model, offers_weight, os, Pipeline, PipelineConfig, profiles,
+      query, reasoning, reciprocity_weight, requester, retrieval_count, run, shortlist, store, mo, max_output):
     import time
 
     mo.stop(not run.value)
@@ -133,7 +135,7 @@ def _(api_key, interaction_weight, interests_weight, intro_model,
         retrieval_count=int(retrieval_count.value), judge_shortlist=int(shortlist.value),
         offers_weight=float(offers_weight.value), interests_weight=float(interests_weight.value),
         reciprocity_weight=float(reciprocity_weight.value), interaction_weight=float(interaction_weight.value),
-        max_output_tokens=int(max_output.value),
+        max_output_tokens=int(max_output.value), min_judge_score=float(min_judge_score.value),
     )
     streamed = {"need": [], "judge": []}
     def show_delta(stage, delta):
@@ -142,13 +144,15 @@ def _(api_key, interaction_weight, interests_weight, intro_model,
             mo.md(f"### Live stage: `{stage}`"),
             mo.md(f"```text\n{''.join(streamed[stage])}\n```"),
         ]))
+    index = EmbeddingIndex.load(store)
+    retrieval_mode = "indexed" if index.vectors.get("offers") else "lexical"
     with mo.status.spinner(title="Running pipeline and recording stream events…"):
-        result = Pipeline(store, profiles, project_secret).run(
+        result = Pipeline(store, profiles, project_secret, index=index).run(
             requester.value, selected_query, config,
             on_delta=show_delta,
         )
     result["streamed_text"] = {stage: "".join(chunks) for stage, chunks in streamed.items()}
-    result["exact_input"] = {"requester_id": requester.value, "query": selected_query, "config": config.__dict__}
+    result["exact_input"] = {"requester_id": requester.value, "query": selected_query, "config": config.__dict__, "retrieval_mode": retrieval_mode}
     result["traces"] = store.dataframe("select stage, call_type, model, reasoning_effort, prompt_version, request_json, response_json, input_tokens, cached_input_tokens, output_tokens, reasoning_tokens, total_tokens, ttft_ms, latency_ms, estimated_cost_usd, response_id, error from llm_calls where run_id = ? order by created_at", [result["run_id"]]).to_dict("records")
     result["finished_at"] = time.time()
     return result,
